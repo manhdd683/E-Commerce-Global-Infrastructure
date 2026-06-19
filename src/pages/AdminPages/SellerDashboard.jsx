@@ -21,6 +21,10 @@ const MOCK_REVIEWS = [
   { id: 3, productName: 'Áo sơ mi nam', customer: 'Lê Hoàng', rating: 1, comment: 'Giao nhầm size rồi shop ơi!!!', reply: '', date: '2026-06-10' },
 ];
 
+/* ── Inline style helpers ── */
+const tdStyle = { verticalAlign: 'middle', padding: '12px 16px' };
+const tableStyle = { width: '100%', borderCollapse: 'collapse', verticalAlign: 'middle' };
+
 const SellerDashboard = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext); 
@@ -89,10 +93,7 @@ const SellerDashboard = () => {
     const updated = allChats.map(c => {
         if (c.id === chatId) {
             const newMsgs = c.messages.map(m => {
-                if (m.sender === 'user' && !m.isRead) {
-                    changed = true;
-                    return { ...m, isRead: true };
-                }
+                if (m.sender === 'user' && !m.isRead) { changed = true; return { ...m, isRead: true }; }
                 return m;
             });
             return { ...c, messages: newMsgs };
@@ -130,7 +131,6 @@ const SellerDashboard = () => {
         const isOldOrder = (!o.sellerId && !o.seller && currentSellerName === 'NBH'); 
         return isClientOrder || isMyMarketingPayment || isOldOrder;
       });
-      
       const sortedOrders = myOrders.sort((a, b) => {
         if (a.status === 'Processing' && b.status !== 'Processing') return -1;
         if (a.status !== 'Processing' && b.status === 'Processing') return 1;
@@ -308,15 +308,24 @@ const SellerDashboard = () => {
   return (
     <div className="d-flex flex-column flex-md-row min-vh-100 bg-light position-relative">
       
-      {/* STYLE ÉP KHUÔN SIDEBAR TRÊN BẢN PC */}
       <style>{`
         #seller-sidebar { width: 100%; overflow-x: auto; border-bottom: 1px solid #ddd; }
         @media (min-width: 768px) {
           #seller-sidebar { width: 260px; min-width: 260px; height: 100vh; position: sticky; top: 0; overflow-y: auto; overflow-x: hidden; border-bottom: none; }
         }
-        /* Làm đẹp thanh cuộn */
         #seller-sidebar::-webkit-scrollbar { width: 4px; height: 4px; }
         #seller-sidebar::-webkit-scrollbar-thumb { background-color: #ddd; border-radius: 4px; }
+
+        /* ── FIX: căn giữa dọc tất cả bảng trong dashboard ── */
+        .seller-table { width: 100%; border-collapse: collapse; }
+        .seller-table th,
+        .seller-table td { vertical-align: middle !important; padding: 14px 16px; }
+        .seller-table thead th { background-color: #f8f9fa; font-weight: 600; font-size: 13px; color: #6c757d; border-bottom: 1px solid #dee2e6; white-space: nowrap; }
+        .seller-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+        .seller-table tbody tr:last-child { border-bottom: none; }
+        .seller-table tbody tr:hover { background-color: #fff8f8; }
+        .seller-table tbody tr.row-warning { background-color: #fff3cd !important; }
+        .seller-table tbody tr.row-warning:hover { background-color: #ffeaa0 !important; }
       `}</style>
 
       {/* MODAL THÊM/SỬA SẢN PHẨM */}
@@ -384,7 +393,7 @@ const SellerDashboard = () => {
         </div>
       )}
 
-      {/* MODAL QR CODE NẠP MARKETING */}
+      {/* MODAL QR CODE */}
       {showQRModal && selectedPackage && (
         <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1060 }}>
           <div className="bg-white p-4 rounded-4 shadow text-center" style={{ width: '90%', maxWidth: '400px' }}>
@@ -453,7 +462,7 @@ const SellerDashboard = () => {
         </div>
       )}
 
-      {/* SIDEBAR BẢNG ĐIỀU KHIỂN (ĐÃ FIX WIDTH TRÊN PC) */}
+      {/* SIDEBAR */}
       <div id="seller-sidebar" className="bg-white shadow-sm d-flex flex-md-column flex-shrink-0">
         <div className="p-3 border-bottom d-flex flex-row flex-md-column justify-content-between align-items-center align-items-md-start">
           <div>
@@ -573,33 +582,54 @@ const SellerDashboard = () => {
             
             <div className="bg-white rounded-4 shadow-sm overflow-hidden border">
               {isLoadingProducts ? (
-                 <div className="text-center py-5 text-muted">🔄 Đang tải dữ liệu...</div>
+                <div className="text-center py-5 text-muted">🔄 Đang tải dữ liệu...</div>
               ) : (
                 <>
                   <div className="table-responsive">
-                    <table className="table table-hover align-middle mb-0">
-                      <thead className="table-light">
+                    <table className="seller-table">
+                      <thead>
                         <tr>
-                          <th className="text-secondary fw-bold text-center" style={{ width: '80px' }}>Ảnh</th>
-                          <th className="text-secondary fw-bold" style={{ minWidth: '200px' }}>Tên sản phẩm</th>
-                          <th className="text-secondary fw-bold text-nowrap">Giá bán</th>
-                          <th className="text-secondary fw-bold text-nowrap">Kho hàng</th>
-                          <th className="text-secondary fw-bold text-center text-nowrap">Thao tác</th>
+                          <th style={{ width: '80px', textAlign: 'center' }}>Ảnh</th>
+                          <th style={{ minWidth: '200px' }}>Tên sản phẩm</th>
+                          <th>Giá bán</th>
+                          <th>Kho hàng</th>
+                          <th style={{ textAlign: 'center' }}>Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
                         {currentProducts.length === 0 ? (
-                          <tr><td colSpan="5" className="text-center py-4 text-muted">Chưa có sản phẩm nào thuộc shop này</td></tr>
+                          <tr>
+                            <td colSpan="5" style={{ textAlign: 'center', color: '#6c757d', padding: '32px' }}>
+                              Chưa có sản phẩm nào thuộc shop này
+                            </td>
+                          </tr>
                         ) : (
                           currentProducts.map((item) => (
                             <tr key={item.id}>
-                              <td className="text-center py-3"><img src={item.images?.[0] || item.image || "https://via.placeholder.com/50"} alt={item.name} className="border rounded object-fit-contain p-1 bg-white" style={{ width: '50px', height: '50px' }} /></td>
-                              <td className="fw-bold text-dark py-3">{item.name}</td>
-                              <td className="text-danger fw-bold py-3 text-nowrap">{item.price.toLocaleString('vi-VN')} ₫</td>
-                              <td className="py-3 text-nowrap">{item.stock <= 5 ? <span className="text-danger fw-bold">{item.stock} (Sắp hết)</span> : <span className="text-success fw-bold">{item.stock}</span>}</td>
-                              <td className="text-center py-3 text-nowrap">
-                                <button onClick={() => handleEditClick(item)} className="btn btn-link text-primary p-0 me-3"><FaEdit size={18} /></button>
-                                <button onClick={() => handleDelete(item.id)} className="btn btn-link text-danger p-0"><FaTrash size={18} /></button>
+                              <td style={{ textAlign: 'center' }}>
+                                <img
+                                  src={item.images?.[0] || item.image || "https://via.placeholder.com/50"}
+                                  alt={item.name}
+                                  style={{ width: '52px', height: '52px', objectFit: 'contain', border: '1px solid #eee', borderRadius: '6px', background: '#fff', padding: '3px' }}
+                                />
+                              </td>
+                              <td style={{ fontWeight: '600', color: '#212529' }}>{item.name}</td>
+                              <td style={{ color: '#ee4d2d', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                                {item.price.toLocaleString('vi-VN')} ₫
+                              </td>
+                              <td style={{ whiteSpace: 'nowrap' }}>
+                                {item.stock <= 5
+                                  ? <span style={{ color: '#dc3545', fontWeight: '700' }}>{item.stock} (Sắp hết)</span>
+                                  : <span style={{ color: '#198754', fontWeight: '700' }}>{item.stock}</span>
+                                }
+                              </td>
+                              <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                                <button onClick={() => handleEditClick(item)} className="btn btn-link text-primary p-0 me-3">
+                                  <FaEdit size={18} />
+                                </button>
+                                <button onClick={() => handleDelete(item.id)} className="btn btn-link text-danger p-0">
+                                  <FaTrash size={18} />
+                                </button>
                               </td>
                             </tr>
                           ))
@@ -633,47 +663,69 @@ const SellerDashboard = () => {
             
             <div className="bg-white rounded-4 shadow-sm overflow-hidden border">
               <div className="table-responsive">
-                <table className="table align-middle mb-0">
-                  <thead className="table-light">
+                <table className="seller-table">
+                  <thead>
                     <tr>
-                      <th className="text-secondary fw-bold text-nowrap">Mã ĐH</th>
-                      <th className="text-secondary fw-bold text-nowrap">Khách hàng</th>
-                      <th className="text-secondary fw-bold" style={{ minWidth: '250px' }}>Sản phẩm cần đóng gói</th>
-                      <th className="text-secondary fw-bold text-nowrap">Doanh thu</th>
-                      <th className="text-secondary fw-bold text-center text-nowrap">Trạng thái</th>
+                      <th>Mã ĐH</th>
+                      <th>Khách hàng</th>
+                      <th style={{ minWidth: '250px' }}>Sản phẩm cần đóng gói</th>
+                      <th>Doanh thu</th>
+                      <th style={{ textAlign: 'center' }}>Trạng thái</th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentOrders.length === 0 ? (
-                      <tr><td colSpan="5" className="text-center py-4 text-muted">Chưa có đơn hàng nào</td></tr>
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: 'center', color: '#6c757d', padding: '32px' }}>
+                          Chưa có đơn hàng nào
+                        </td>
+                      </tr>
                     ) : (
                       currentOrders.map((order) => (
-                        <tr key={order.id} className={order.status === 'Processing' ? 'table-warning' : 'bg-white'}>
-                          <td className={`fw-bold py-3 ${order.status === 'Processing' ? 'text-danger' : 'text-dark'}`}>#{order.id}</td>
-                          <td className="py-3">
-                            <div className="fw-bold text-dark text-nowrap">{order.customerInfo?.fullName || order.username || 'Khách ẩn danh'}</div>
-                            <div className="text-muted small mt-1">SĐT: {order.customerInfo?.phone || 'N/A'}</div>
+                        <tr key={order.id} className={order.status === 'Processing' ? 'row-warning' : ''}>
+                          <td style={{ fontWeight: '700', color: order.status === 'Processing' ? '#dc3545' : '#212529' }}>
+                            #{order.id}
                           </td>
-                          <td className="py-3">
+                          <td>
+                            <div style={{ fontWeight: '600', color: '#212529', whiteSpace: 'nowrap' }}>
+                              {order.customerInfo?.fullName || order.username || 'Khách ẩn danh'}
+                            </div>
+                            <div style={{ color: '#6c757d', fontSize: '13px', marginTop: '3px' }}>
+                              SĐT: {order.customerInfo?.phone || 'N/A'}
+                            </div>
+                          </td>
+                          <td>
                             {order.items?.map((item, idx) => (
-                              <div key={idx} className="d-flex align-items-center gap-2 mb-2">
-                                <img src={item.images?.[0] || item.image || "https://via.placeholder.com/45"} alt={item.name} className="rounded border bg-white object-fit-cover flex-shrink-0" style={{ width: '40px', height: '40px' }} />
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: idx < order.items.length - 1 ? '10px' : '0' }}>
+                                <img
+                                  src={item.images?.[0] || item.image || "https://via.placeholder.com/45"}
+                                  alt={item.name}
+                                  style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #eee', flexShrink: 0 }}
+                                />
                                 <div>
-                                  <div className="small fw-bold text-dark text-truncate" style={{ maxWidth: '180px' }}>{item.name}</div>
-                                  <div className="small text-danger fw-bold mt-1">x{item.quantity}</div>
+                                  <div style={{ fontWeight: '600', fontSize: '13px', color: '#212529', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {item.name}
+                                  </div>
+                                  <div style={{ color: '#ee4d2d', fontWeight: '700', fontSize: '13px', marginTop: '2px' }}>
+                                    x{item.quantity}
+                                  </div>
                                 </div>
                               </div>
                             ))}
                           </td>
-                          <td className="py-3 text-danger fw-bold text-nowrap">{Number(order.totalPrice || 0).toLocaleString('vi-VN')} ₫</td>
-                          <td className="py-3 text-center">
+                          <td style={{ color: '#ee4d2d', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                            {Number(order.totalPrice || 0).toLocaleString('vi-VN')} ₫
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
                             <select 
                               value={order.status} 
                               onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)} 
-                              className="form-select form-select-sm fw-bold cursor-pointer"
+                              className="form-select form-select-sm fw-bold"
                               style={{ 
-                                backgroundColor: statusOptions.find(o => o.value === order.status)?.color + '1A', 
-                                color: statusOptions.find(o => o.value === order.status)?.color || '#333'
+                                backgroundColor: (statusOptions.find(o => o.value === order.status)?.color || '#333') + '1A',
+                                color: statusOptions.find(o => o.value === order.status)?.color || '#333',
+                                cursor: 'pointer',
+                                minWidth: '180px'
                               }}
                             >
                               {statusOptions.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
@@ -711,34 +763,44 @@ const SellerDashboard = () => {
             
             <div className="bg-white rounded-4 shadow-sm overflow-hidden border">
               <div className="table-responsive">
-                <table className="table align-middle mb-0">
-                  <thead className="table-light">
+                <table className="seller-table">
+                  <thead>
                     <tr>
-                      <th className="text-secondary fw-bold text-nowrap">Mã Code</th>
-                      <th className="text-secondary fw-bold text-nowrap">Mức giảm</th>
-                      <th className="text-secondary fw-bold text-nowrap">Đơn tối thiểu</th>
-                      <th className="text-secondary fw-bold text-nowrap text-center">Lượt dùng</th>
-                      <th className="text-secondary fw-bold text-nowrap text-center">Hết hạn</th>
-                      <th className="text-secondary fw-bold text-center text-nowrap">Hành động</th>
+                      <th>Mã Code</th>
+                      <th>Mức giảm</th>
+                      <th>Đơn tối thiểu</th>
+                      <th style={{ textAlign: 'center' }}>Lượt dùng</th>
+                      <th style={{ textAlign: 'center' }}>Hết hạn</th>
+                      <th style={{ textAlign: 'center' }}>Hành động</th>
                     </tr>
                   </thead>
                   <tbody>
                     {shopVouchers.length === 0 ? (
-                      <tr><td colSpan="6" className="text-center py-4 text-muted">Shop chưa tạo mã khuyến mãi nào.</td></tr>
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: 'center', color: '#6c757d', padding: '32px' }}>
+                          Shop chưa tạo mã khuyến mãi nào.
+                        </td>
+                      </tr>
                     ) : (
                       shopVouchers.map((v, index) => {
                         const isExpired = new Date(v.expiryDate) < new Date();
                         return (
-                          <tr key={index} className={isExpired ? 'opacity-50' : 'bg-white'}>
-                            <td className="py-3">
-                              <div className="fw-bold text-danger fs-6">{v.code}</div>
-                              <div className="small text-muted">{v.name}</div>
+                          <tr key={index} style={{ opacity: isExpired ? 0.5 : 1 }}>
+                            <td>
+                              <div style={{ fontWeight: '700', color: '#ee4d2d', fontSize: '15px' }}>{v.code}</div>
+                              <div style={{ color: '#6c757d', fontSize: '13px' }}>{v.name}</div>
                             </td>
-                            <td className="py-3 fw-bold text-dark text-nowrap">{v.type === 'PERCENT' ? `${v.value}%` : `${v.value.toLocaleString('vi-VN')} ₫`}</td>
-                            <td className="py-3 text-dark text-nowrap">{v.minSpend.toLocaleString('vi-VN')} ₫</td>
-                            <td className="py-3 text-dark text-center text-nowrap">{v.systemUsed} / {v.systemLimit === 9999 ? '∞' : v.systemLimit}</td>
-                            <td className={`py-3 text-center fw-bold text-nowrap ${isExpired ? 'text-danger' : 'text-success'}`}>{isExpired ? 'Đã hết hạn' : new Date(v.expiryDate).toLocaleDateString('vi-VN')}</td>
-                            <td className="py-3 text-center">
+                            <td style={{ fontWeight: '700', color: '#212529', whiteSpace: 'nowrap' }}>
+                              {v.type === 'PERCENT' ? `${v.value}%` : `${v.value.toLocaleString('vi-VN')} ₫`}
+                            </td>
+                            <td style={{ whiteSpace: 'nowrap' }}>{v.minSpend.toLocaleString('vi-VN')} ₫</td>
+                            <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              {v.systemUsed} / {v.systemLimit === 9999 ? '∞' : v.systemLimit}
+                            </td>
+                            <td style={{ textAlign: 'center', fontWeight: '700', whiteSpace: 'nowrap', color: isExpired ? '#dc3545' : '#198754' }}>
+                              {isExpired ? 'Đã hết hạn' : new Date(v.expiryDate).toLocaleDateString('vi-VN')}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
                               <button onClick={() => handleDeleteShopVoucher(v.code)} className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 m-auto">
                                 <FaTrash /> Thu hồi
                               </button>
@@ -754,7 +816,7 @@ const SellerDashboard = () => {
           </div>
         )}
 
-        {/* TAB 5: QUẢN LÝ ĐÁNH GIÁ (REVIEWS) */}
+        {/* TAB 5: QUẢN LÝ ĐÁNH GIÁ */}
         {activeTab === 'reviews' && (
           <div>
             <h1 className="fs-4 text-dark mb-4 fw-bold">Đánh giá sản phẩm</h1>
@@ -804,8 +866,6 @@ const SellerDashboard = () => {
         {/* TAB 6: CHAT VỚI KHÁCH HÀNG */}
         {activeTab === 'customers' && (
           <div className="bg-white rounded-4 shadow-sm border overflow-hidden d-flex flex-column flex-md-row" style={{ height: '75vh' }}>
-            
-            {/* Cột trái: Danh sách khách */}
             <div className="border-end d-flex flex-column" style={{ width: '100%', maxWidth: '350px' }}>
               <div className="bg-light p-3 border-bottom fw-bold fs-5 text-dark">Tin nhắn KH ({chats.length})</div>
               <div className="overflow-auto flex-grow-1">
@@ -829,7 +889,6 @@ const SellerDashboard = () => {
               </div>
             </div>
 
-            {/* Cột phải: Khung Chat */}
             <div className="flex-grow-1 d-flex flex-column bg-light w-100">
               {activeChat ? (
                 <>
@@ -868,7 +927,7 @@ const SellerDashboard = () => {
             <h1 className="fs-4 text-dark mb-4 fw-bold">Tài chính & Đối soát</h1>
             <div className="row g-4">
               <div className="col-12 col-lg-5">
-                <div className="bg-danger text-white p-4 p-md-5 rounded-4 shadow d-flex flex-column justify-content-between h-100" style={{ background: 'linear-gradient(135deg, #ff4b2b, #ff416c)' }}>
+                <div className="text-white p-4 p-md-5 rounded-4 shadow d-flex flex-column justify-content-between h-100" style={{ background: 'linear-gradient(135deg, #ff4b2b, #ff416c)' }}>
                   <div>
                     <div className="fs-5 opacity-75 d-flex align-items-center gap-2 mb-2"><FaWallet /> Số dư khả dụng</div>
                     <div className="fw-bold lh-1 mb-4" style={{ fontSize: 'clamp(2rem, 4vw, 2.5rem)' }}>{accountBalance.toLocaleString('vi-VN')} ₫</div>
@@ -880,15 +939,12 @@ const SellerDashboard = () => {
               <div className="col-12 col-lg-7">
                 <div className="bg-white p-4 rounded-4 shadow-sm border h-100">
                   <h4 className="fs-5 text-dark fw-bold d-flex align-items-center gap-2 border-bottom pb-3 mb-4"><FaFileInvoiceDollar className="text-primary"/> Minh bạch doanh thu shop {displayShopName}</h4>
-                  
                   <div className="d-flex flex-column gap-3 fs-6">
                     <div className="d-flex justify-content-between text-secondary"><span>Doanh thu shop thực tế:</span> <strong className="text-dark">{totalRevenue.toLocaleString('vi-VN')} ₫</strong></div>
                     <div className="d-flex justify-content-between text-secondary"><span>Phí sàn khấu trừ (5%):</span> <strong className="text-danger">-{platformFee.toLocaleString('vi-VN')} ₫</strong></div>
                     <div className="d-flex justify-content-between text-secondary"><span>Chi phí mua gói Marketing:</span> <strong className="text-danger">-{marketingCost.toLocaleString('vi-VN')} ₫</strong></div>
                     <div className="d-flex justify-content-between text-secondary"><span>Tiền đã yêu cầu rút:</span> <strong className="text-primary">-{withdrawnAmount.toLocaleString('vi-VN')} ₫</strong></div>
-                    
                     <hr className="border-secondary border-dashed my-2" />
-                    
                     <div className="d-flex justify-content-between fs-5 fw-bold text-dark"><span>Ví thực nhận:</span> <span className="text-success">{accountBalance.toLocaleString('vi-VN')} ₫</span></div>
                   </div>
                 </div>
@@ -910,7 +966,6 @@ const SellerDashboard = () => {
                   <button onClick={() => handleBuyPackage('Gói Freeship Extra', 500000)} className="btn btn-danger w-100 py-3 fw-bold fs-6 shadow-sm">Đăng ký mua gói</button>
                 </div>
               </div>
-              
               <div className="col-12 col-md-6">
                 <div className="bg-white p-4 p-md-5 rounded-4 shadow-sm border border-primary h-100 d-flex flex-column">
                   <h3 className="fs-4 text-primary fw-bold mb-3">Quảng cáo Khám phá</h3>
