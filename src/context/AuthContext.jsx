@@ -1,13 +1,11 @@
 import React, { createContext, useState, useEffect } from 'react';
 
-// 1. Khởi tạo kho chứa
 export const AuthContext = createContext();
 
-// 2. Tạo Component cung cấp dữ liệu cho toàn app
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  // Lấy dữ liệu user từ LocalStorage nếu đã từng đăng nhập trước đó
+  // QUẢN LÝ TRẠNG THÁI XÁC THỰC TOÀN CỤC
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -19,10 +17,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ĐÃ SỬA: Hàm login giờ đây chỉ làm nhiệm vụ cập nhật trạng thái UI
-  // Dữ liệu đã được kiểm tra API và ép quyền chuẩn ở bên AuthPage rồi
   const login = (userData) => {
-    // Đọc thẳng dữ liệu chuẩn từ LocalStorage (do AuthPage vừa lưu) để đồng bộ 100%
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));

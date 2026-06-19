@@ -16,7 +16,7 @@ import ShopPage from "./pages/UserPages/ShopPage";
 import SellerProfilePage from "./pages/AdminPages/SellerProfilePage";
 import SellerBulkUploadPage from './pages/AdminPages/SellerBulkUploadPage';
 import AffiliateDashboardPage from "./pages/UserPages/AffiliateDashboardPage";
-
+import 'bootstrap/dist/css/bootstrap.min.css';
 // Route Guard
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useContext(AuthContext);

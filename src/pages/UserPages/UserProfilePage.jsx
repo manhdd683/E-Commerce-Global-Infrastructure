@@ -13,15 +13,8 @@ const UserUserProfilePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   
-  // State quản lý thông tin tài khoản
-  const [profileData, setProfileData] = useState({
-    id: '', username: '', phone: '', dob: '', email: '', avatar: '', role: '', status: ''
-  });
-
-  // State quản lý đổi mật khẩu
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '', newPassword: '', confirmPassword: ''
-  });
+  const [profileData, setProfileData] = useState({ id: '', username: '', phone: '', dob: '', email: '', avatar: '', role: '', status: '' });
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
   useEffect(() => {
     if (!user) {
@@ -34,8 +27,6 @@ const UserUserProfilePage = () => {
         setIsLoading(true);
         const response = await apiClient.get(USER_API_URL);
         const allUsers = response.data || [];
-        
-        // Chỉ lấy thông tin của tài khoản đang đăng nhập hiện tại
         const myProfile = allUsers.find(u => u.username === user.username);
         
         if (myProfile) {
@@ -71,13 +62,8 @@ const UserUserProfilePage = () => {
     fetchProfile();
   }, [user, navigate]);
 
-  const handleChange = (e) => {
-    setProfileData({ ...profileData, [e.target.name]: e.target.value });
-  };
-
-  const handlePasswordChangeText = (e) => {
-    setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setProfileData({ ...profileData, [e.target.name]: e.target.value });
+  const handlePasswordChangeText = (e) => setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -89,19 +75,15 @@ const UserUserProfilePage = () => {
     }
   };
 
-  // --- HÀM LƯU THÔNG TIN HỒ SƠ ---
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      if (profileData.id) {
-         // Đẩy dữ liệu cập nhật lên API MockAPI để lưu trữ vĩnh viễn
-         await apiClient.put(`${USER_API_URL}/${profileData.id}`, profileData);
-      }
+      if (profileData.id) await apiClient.put(`${USER_API_URL}/${profileData.id}`, profileData);
       const updatedUser = { ...user, ...profileData };
       localStorage.setItem('user', JSON.stringify(updatedUser));
       login(updatedUser);
-      alert(" Cập nhật thông tin tài khoản thành công!");
+      alert("Cập nhật thông tin tài khoản thành công!");
     } catch (error) {
       alert("Lỗi khi đồng bộ máy chủ!");
     } finally {
@@ -109,33 +91,23 @@ const UserUserProfilePage = () => {
     }
   };
 
-  // --- HÀM ĐỔI MẬT KHẨU BẢO MẬT ---
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) return alert("Mật khẩu mới và Xác nhận mật khẩu không trùng khớp!");
     
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert(" Mật khẩu mới và Xác nhận mật khẩu không trùng khớp!");
-      return;
-    }
-
     setIsChangingPassword(true);
     try {
       const response = await apiClient.get(`${USER_API_URL}/${profileData.id}`);
       const currentServerUser = response.data;
 
       if (currentServerUser.password !== passwordData.currentPassword) {
-        alert(" Mật khẩu hiện tại không chính xác!");
+        alert("Mật khẩu hiện tại không chính xác!");
         setIsChangingPassword(false);
         return;
       }
 
-      // Tiến hành cập nhật mật khẩu mới lên API
-      await apiClient.put(`${USER_API_URL}/${profileData.id}`, {
-        ...currentServerUser,
-        password: passwordData.newPassword
-      });
-
-      alert(" Đổi mật khẩu thành công! Vui lòng sử dụng mật khẩu mới cho lần đăng nhập sau.");
+      await apiClient.put(`${USER_API_URL}/${profileData.id}`, { ...currentServerUser, password: passwordData.newPassword });
+      alert("Đổi mật khẩu thành công! Vui lòng sử dụng mật khẩu mới cho lần đăng nhập sau.");
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
       alert("Lỗi hệ thống khi đổi mật khẩu!");
@@ -146,98 +118,128 @@ const UserUserProfilePage = () => {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 0', minHeight: '60vh', backgroundColor: '#f4f6f8' }}>
-        <h2 style={{ color: '#888' }}>🔄 Đang tải hồ sơ bảo mật...</h2>
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh', backgroundColor: '#f4f6f8' }}>
+        <h2 style={{ color: '#888' }}>🔄 Đang tải hồ sơ...</h2>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '30px' }}>
+    <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', padding: '30px 0' }}>
+      <div className="container">
         
-        <div>
+        {/* Nút quay lại */}
+        <div className="mb-4">
           <Link to="/" style={{ color: '#ff469e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
             <FaArrowLeft /> Quay về Trang chủ
           </Link>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px', alignItems: 'start' }}>
+        {/* Bố cục Responsive: Trên mobile Ảnh nằm trên Form nằm dưới, trên PC Form nằm trái Ảnh nằm phải */}
+        <div className="row flex-column-reverse flex-lg-row">
           
-          {/* KHU VỰC 1: SỬA THÔNG TIN CHI TIẾT */}
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '35px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-            <h2 style={{ marginTop: 0, color: '#333', borderBottom: '2px solid #f5f5f5', paddingBottom: '15px' }}>Hồ sơ tài khoản</h2>
-            <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
+          {/* CỘT 1: FORM THÔNG TIN & ĐỔI MẬT KHẨU */}
+          <div className="col-12 col-lg-8 mt-4 mt-lg-0">
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
               
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ width: '150px', fontWeight: 'bold', color: '#555', display: 'flex', alignItems: 'center', gap: '8px' }}><FaUser/> Tên tài khoản</span>
-                <div style={{ fontWeight: 'bold', color: '#333', fontSize: '16px' }}>{profileData.username}</div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ width: '150px', fontWeight: 'bold', color: '#555', display: 'flex', alignItems: 'center', gap: '8px' }}><FaEnvelope/> Email / Mail *</span>
-                <input type="email" name="email" value={profileData.email} onChange={handleChange} required style={{ flex: 1, padding: '10px 15px', border: '1px solid #ddd', borderRadius: '6px' }} />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ width: '150px', fontWeight: 'bold', color: '#555', display: 'flex', alignItems: 'center', gap: '8px' }}><FaPhone/> Số điện thoại *</span>
-                <input type="tel" name="phone" value={profileData.phone} onChange={handleChange} required pattern="[0-9]{10,11}" style={{ flex: 1, padding: '10px 15px', border: '1px solid #ddd', borderRadius: '6px' }} />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ width: '150px', fontWeight: 'bold', color: '#555', display: 'flex', alignItems: 'center', gap: '8px' }}><FaCalendarAlt/> Ngày sinh *</span>
-                <input type="date" name="dob" value={profileData.dob} onChange={handleChange} required style={{ flex: 1, padding: '10px 15px', border: '1px solid #ddd', borderRadius: '6px' }} />
-              </div>
-
-              <div style={{ paddingLeft: '150px', marginTop: '10px' }}>
-                <button type="submit" disabled={isSaving} style={{ padding: '12px 30px', backgroundColor: '#ff469e', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
-                  {isSaving ? 'Đang cập nhật...' : 'Cập nhật thông tin'}
-                </button>
-              </div>
-            </form>
-
-            {/* KHU VỰC ĐỔI MẬT KHẨU ĐƯỢC TÍCH HỢP THÊM */}
-            <h2 style={{ marginTop: '40px', color: '#333', borderBottom: '2px solid #f5f5f5', paddingBottom: '15px' }}>Đổi mật khẩu bảo mật</h2>
-            <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
+              <h3 className="border-bottom pb-3 mb-4 text-dark">Hồ sơ tài khoản</h3>
               
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ width: '150px', fontWeight: 'bold', color: '#555', display: 'flex', alignItems: 'center', gap: '8px' }}><FaLock/> Mật khẩu cũ</span>
-                <input type="password" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordChangeText} required placeholder="Nhập mật khẩu hiện tại" style={{ flex: 1, padding: '10px 15px', border: '1px solid #ddd', borderRadius: '6px' }} />
-              </div>
+              <form onSubmit={handleSaveProfile} className="d-flex flex-column gap-3">
+                <div className="row align-items-center">
+                  <div className="col-12 col-sm-4 col-md-3 fw-bold text-secondary mb-2 mb-sm-0 d-flex align-items-center gap-2"><FaUser/> Tên tài khoản</div>
+                  <div className="col-12 col-sm-8 col-md-9 fw-bold text-dark fs-5">{profileData.username}</div>
+                </div>
 
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ width: '150px', fontWeight: 'bold', color: '#555', display: 'flex', alignItems: 'center', gap: '8px' }}><FaLock/> Mật khẩu mới</span>
-                <input type="password" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordChangeText} required placeholder="Nhập mật khẩu mới" style={{ flex: 1, padding: '10px 15px', border: '1px solid #ddd', borderRadius: '6px' }} />
-              </div>
+                <div className="row align-items-center">
+                  <div className="col-12 col-sm-4 col-md-3 fw-bold text-secondary mb-2 mb-sm-0 d-flex align-items-center gap-2"><FaEnvelope/> Email *</div>
+                  <div className="col-12 col-sm-8 col-md-9">
+                    <input type="email" name="email" value={profileData.email} onChange={handleChange} required className="form-control" />
+                  </div>
+                </div>
 
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ width: '150px', fontWeight: 'bold', color: '#555', display: 'flex', alignItems: 'center', gap: '8px' }}><FaLock/> Xác nhận lại</span>
-                <input type="password" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChangeText} required placeholder="Xác nhận lại mật khẩu mới" style={{ flex: 1, padding: '10px 15px', border: '1px solid #ddd', borderRadius: '6px' }} />
-              </div>
+                <div className="row align-items-center">
+                  <div className="col-12 col-sm-4 col-md-3 fw-bold text-secondary mb-2 mb-sm-0 d-flex align-items-center gap-2"><FaPhone/> Số điện thoại *</div>
+                  <div className="col-12 col-sm-8 col-md-9">
+                    <input type="tel" name="phone" value={profileData.phone} onChange={handleChange} required pattern="[0-9]{10,11}" className="form-control" />
+                  </div>
+                </div>
 
-              <div style={{ paddingLeft: '150px', marginTop: '10px' }}>
-                <button type="submit" disabled={isChangingPassword} style={{ padding: '12px 30px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
-                  {isChangingPassword ? 'Đang thực hiện...' : 'Thay đổi mật khẩu'}
-                </button>
-              </div>
-            </form>
+                <div className="row align-items-center">
+                  <div className="col-12 col-sm-4 col-md-3 fw-bold text-secondary mb-2 mb-sm-0 d-flex align-items-center gap-2"><FaCalendarAlt/> Ngày sinh *</div>
+                  <div className="col-12 col-sm-8 col-md-9">
+                    <input type="date" name="dob" value={profileData.dob} onChange={handleChange} required className="form-control" />
+                  </div>
+                </div>
+
+                <div className="row mt-3">
+                  <div className="col-12 col-sm-4 col-md-3 d-none d-sm-block"></div>
+                  <div className="col-12 col-sm-8 col-md-9">
+                    <button type="submit" disabled={isSaving} className="btn w-100 w-sm-auto" style={{ backgroundColor: '#ff469e', color: 'white', fontWeight: 'bold', padding: '10px 30px' }}>
+                      {isSaving ? 'Đang cập nhật...' : 'Lưu thay đổi'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              {/* ĐỔI MẬT KHẨU */}
+              <h3 className="border-bottom pb-3 mb-4 mt-5 text-dark">Đổi mật khẩu</h3>
+              
+              <form onSubmit={handleUpdatePassword} className="d-flex flex-column gap-3">
+                <div className="row align-items-center">
+                  <div className="col-12 col-sm-4 col-md-3 fw-bold text-secondary mb-2 mb-sm-0 d-flex align-items-center gap-2"><FaLock/> Mật khẩu cũ</div>
+                  <div className="col-12 col-sm-8 col-md-9">
+                    <input type="password" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordChangeText} required placeholder="Nhập mật khẩu hiện tại" className="form-control" />
+                  </div>
+                </div>
+
+                <div className="row align-items-center">
+                  <div className="col-12 col-sm-4 col-md-3 fw-bold text-secondary mb-2 mb-sm-0 d-flex align-items-center gap-2"><FaLock/> Mật khẩu mới</div>
+                  <div className="col-12 col-sm-8 col-md-9">
+                    <input type="password" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordChangeText} required placeholder="Nhập mật khẩu mới" className="form-control" />
+                  </div>
+                </div>
+
+                <div className="row align-items-center">
+                  <div className="col-12 col-sm-4 col-md-3 fw-bold text-secondary mb-2 mb-sm-0 d-flex align-items-center gap-2"><FaLock/> Xác nhận lại</div>
+                  <div className="col-12 col-sm-8 col-md-9">
+                    <input type="password" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChangeText} required placeholder="Xác nhận lại mật khẩu mới" className="form-control" />
+                  </div>
+                </div>
+
+                <div className="row mt-3">
+                  <div className="col-12 col-sm-4 col-md-3 d-none d-sm-block"></div>
+                  <div className="col-12 col-sm-8 col-md-9">
+                    <button type="submit" disabled={isChangingPassword} className="btn btn-dark w-100 w-sm-auto" style={{ fontWeight: 'bold', padding: '10px 30px' }}>
+                      {isChangingPassword ? 'Đang thực hiện...' : 'Cập nhật mật khẩu'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+            </div>
           </div>
 
-          {/* KHU VỰC 2: ẢNH ĐẠI DIỆN AVATAR */}
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '35px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: '130px', height: '120px', borderRadius: '50%', border: '2px dashed #ddd', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginBottom: '20px' }}>
-              {profileData.avatar ? (
-                <img src={profileData.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <FaUserCircle size={90} color="#ccc" />
-              )}
-            </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#f8f9fa', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: '#555' }}>
-              <FaCamera /> Tải ảnh lên
-              <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
-            </label>
-            <div style={{ fontSize: '12px', color: '#999', marginTop: '15px', textAlign: 'center', lineHeight: '1.5' }}>
-              Dung lượng tệp tối đa 2 MB<br />Định dạng: .JPEG, .PNG
+          {/* CỘT 2: ẢNH ĐẠI DIỆN AVATAR */}
+          <div className="col-12 col-lg-4">
+            <div className="d-flex flex-column align-items-center text-center" style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+              
+              <div style={{ width: '130px', height: '130px', borderRadius: '50%', border: '2px dashed #ddd', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginBottom: '20px' }}>
+                {profileData.avatar ? (
+                  <img src={profileData.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <FaUserCircle size={100} color="#ccc" />
+                )}
+              </div>
+              
+              <label className="btn btn-light border fw-bold text-secondary d-flex align-items-center gap-2 mb-3 cursor-pointer">
+                <FaCamera /> Chọn ảnh mới
+                <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
+              </label>
+              
+              <div className="text-muted small lh-base">
+                Dung lượng tệp tối đa 2 MB<br />Định dạng: .JPEG, .PNG
+              </div>
+
             </div>
           </div>
 

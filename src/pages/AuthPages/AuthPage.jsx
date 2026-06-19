@@ -18,65 +18,35 @@ const AuthPage = () => {
   const [loginPassword, setLoginPassword] = useState('');
 
   // --- STATE CHO ĐĂNG KÝ ---
-  const [regData, setRegData] = useState({
-    username: '',
-    password: '',
-    role: 'USER',
-    phone: '',
-    dob: ''
-  });
+  const [regData, setRegData] = useState({ username: '', password: '', role: 'USER', phone: '', dob: '' });
 
-  // ==================== LOGIC ĐĂNG NHẬP (ĐÃ FIX ÉP KIỂU ROLE ĐỂ QUA CỬA BẢO VỆ) ====================
+  // ==================== LOGIC ĐĂNG NHẬP ====================
   const handleLogin = async (e) => {
     e.preventDefault();
-    
     try {
-      // 1. Gọi trực tiếp lên MockAPI để lấy danh sách user thực tế
       const response = await apiClient.get(NEW_USER_API_URL);
       const allUsers = response.data;
-
-      // 2. Tìm xem có tài khoản nào khớp Username và Password không
       const validUser = allUsers.find(u => u.username === loginUsername && u.password === loginPassword);
 
       if (validUser) {
-        // Nếu tài khoản đang bị Admin khóa
         if (validUser.status === "Suspended") {
-          alert("⛔ Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ Quản trị viên!");
-          return;
+          return alert("⛔ Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ Quản trị viên!");
         }
 
-        // --- ĐOẠN QUAN TRỌNG: CHUẨN HÓA QUYỀN TRƯỚC KHI LƯU VÀO TRÌNH DUYỆT ---
-        // Đảm bảo dù MockAPI lưu tiếng Việt thì hệ thống bảo vệ (Route Guard) vẫn đọc được chuẩn tiếng Anh
         const rawRole = String(validUser.role || "USER").toUpperCase().trim();
         let standardizedRole = "USER";
 
-        if (rawRole === 'ADMIN' || rawRole === 'QUẢN TRỊ VIÊN' || rawRole === 'QUAN TRI VIEN') {
-          standardizedRole = "ADMIN";
-        } 
-        else if (rawRole === 'SELLER' || rawRole === 'NGƯỜI BÁN' || rawRole === 'NGƯỜI BÁN HÀNG' || rawRole === 'NGUOI BAN') {
-          standardizedRole = "SELLER";
-        }
+        if (rawRole === 'ADMIN' || rawRole === 'QUẢN TRỊ VIÊN' || rawRole === 'QUAN TRI VIEN') standardizedRole = "ADMIN";
+        else if (rawRole === 'SELLER' || rawRole === 'NGƯỜI BÁN' || rawRole === 'NGƯỜI BÁN HÀNG' || rawRole === 'NGUOI BAN') standardizedRole = "SELLER";
 
-        // Tạo một bản sao của user, nhưng ghi đè cái quyền chuẩn tiếng Anh vào
         const userToSave = { ...validUser, role: standardizedRole };
-
-        // 3. Đăng nhập thành công -> Lưu user (đã chuẩn hóa quyền) vào LocalStorage
         localStorage.setItem('user', JSON.stringify(userToSave));
         
-        // (Tùy chọn) Gọi hàm login của Context để nó cập nhật UI Header
         try { login(userToSave.username, userToSave.password); } catch(err) {}
 
-        // 4. Điều hướng CHUẨN XÁC
-        if (standardizedRole === "ADMIN") {
-          navigate('/admin/dashboard'); 
-        } 
-        else if (standardizedRole === "SELLER") {
-          navigate('/seller/dashboard'); 
-        } 
-        else {
-          navigate('/'); // Mặc định là khách hàng
-        }
-
+        if (standardizedRole === "ADMIN") navigate('/admin/dashboard'); 
+        else if (standardizedRole === "SELLER") navigate('/seller/dashboard'); 
+        else navigate('/'); 
       } else {
         alert("❌ Sai tên đăng nhập hoặc mật khẩu!");
       }
@@ -88,58 +58,41 @@ const AuthPage = () => {
 
   const handleForgotPassword = () => {
     const resetEmail = window.prompt("Vui lòng nhập Tên đăng nhập hoặc Số điện thoại để khôi phục mật khẩu:");
-    if (resetEmail) {
-      alert(`✅ Hệ thống đã tiếp nhận yêu cầu. Hướng dẫn khôi phục mật khẩu sẽ được gửi đến: ${resetEmail}`);
-    }
+    if (resetEmail) alert(`✅ Hệ thống đã tiếp nhận yêu cầu. Hướng dẫn khôi phục mật khẩu sẽ được gửi đến: ${resetEmail}`);
   };
 
   // ==================== LOGIC ĐĂNG KÝ ====================
-  const handleRegChange = (e) => {
-    setRegData({ ...regData, [e.target.name]: e.target.value });
-  };
+  const handleRegChange = (e) => setRegData({ ...regData, [e.target.name]: e.target.value });
 
   const calculateAge = (dobString) => {
     const birthDate = new Date(dobString);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     return age;
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    // 1. Kiểm tra SĐT trong danh sách đen
     const blacklistedPhones = JSON.parse(localStorage.getItem('blacklistedPhones') || '[]');
     if (blacklistedPhones.includes(regData.phone)) {
-      alert("❌ TỪ CHỐI: Số điện thoại này đã bị hệ thống khóa vĩnh viễn do cố tình vi phạm chính sách độ tuổi!");
-      return;
+      return alert("❌ TỪ CHỐI: Số điện thoại này đã bị hệ thống khóa vĩnh viễn do cố tình vi phạm chính sách độ tuổi!");
     }
 
-    // 2. Kiểm tra độ tuổi (Phải >= 18)
     const age = calculateAge(regData.dob);
     if (age < 18) {
-      // Đẩy SĐT vào danh sách đen
       blacklistedPhones.push(regData.phone);
       localStorage.setItem('blacklistedPhones', JSON.stringify(blacklistedPhones));
-      alert(`⛔ CẢNH BÁO: Bạn mới ${age} tuổi. Yêu cầu trên 18 tuổi để tạo tài khoản!\nSố điện thoại ${regData.phone} đã bị khóa đăng ký trên hệ thống.`);
-      return;
+      return alert(`⛔ CẢNH BÁO: Bạn mới ${age} tuổi. Yêu cầu trên 18 tuổi để tạo tài khoản!\nSố điện thoại ${regData.phone} đã bị khóa đăng ký trên hệ thống.`);
     }
 
-    // 3. Tiến hành đăng ký lưu lên MockAPI
     try {
       await apiClient.post(NEW_USER_API_URL, { 
-        username: regData.username,
-        password: regData.password,
-        role: regData.role,
-        phone: regData.phone,
-        status: "Active"
+        username: regData.username, password: regData.password, role: regData.role, phone: regData.phone, status: "Active"
       });
       alert("🎉 Đăng ký tài khoản thành công! Xin mời đăng nhập.");
-      // Tự động lật về trang Đăng nhập
       setIsLoginMode(true);
       setRegData({ username: '', password: '', role: 'USER', phone: '', dob: '' });
     } catch (error) {
@@ -148,94 +101,90 @@ const AuthPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f4f6f8' }}>
-      
-      {/* ================= GIAO DIỆN ĐĂNG NHẬP ================= */}
-      {isLoginMode ? (
-        <form onSubmit={handleLogin} style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '400px' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>Đăng nhập hệ thống</h2>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Tên đăng nhập</label>
-            <input 
-              type="text" required value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} 
-              style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} 
-            />
-          </div>
+    <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light px-3 py-4">
+      {/* Khung form tự động co giãn 100% trên mobile và khóa ở 420px trên PC */}
+      <div className="bg-white p-4 p-md-5 rounded-4 shadow-sm w-100" style={{ maxWidth: '420px' }}>
+        
+        {isLoginMode ? (
+          /* ================= GIAO DIỆN ĐĂNG NHẬP ================= */
+          <form onSubmit={handleLogin}>
+            <h2 className="text-center mb-4 text-dark fw-bold">Đăng nhập</h2>
+            
+            <div className="mb-3">
+              <label className="form-label fw-bold text-secondary small">Tên đăng nhập</label>
+              <input type="text" required value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className="form-control py-2" />
+            </div>
 
-          <div style={{ marginBottom: '5px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Mật khẩu</label>
-            <input 
-              type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} 
-              style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} 
-            />
-          </div>
+            <div className="mb-2">
+              <label className="form-label fw-bold text-secondary small">Mật khẩu</label>
+              <input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="form-control py-2" />
+            </div>
 
-          {/* Nút Quên mật khẩu */}
-          <div style={{ textAlign: 'right', marginBottom: '25px' }}>
-            <span onClick={handleForgotPassword} style={{ fontSize: '13px', color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>
-              Quên mật khẩu?
-            </span>
-          </div>
+            <div className="text-end mb-4">
+              <span onClick={handleForgotPassword} className="text-primary small text-decoration-underline" style={{ cursor: 'pointer' }}>
+                Quên mật khẩu?
+              </span>
+            </div>
 
-          <button type="submit" style={{ width: '100%', padding: '15px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
-            Đăng nhập
-          </button>
-
-          <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px' }}>
-            <span style={{ color: '#555' }}>Bạn chưa có tài khoản? </span>
-            <span onClick={() => setIsLoginMode(false)} style={{ color: '#007bff', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}>
-              Đăng ký ngay
-            </span>
-          </div>
-        </form>
-
-      ) : (
-
-        /* ================= GIAO DIỆN ĐĂNG KÝ ================= */
-        <form onSubmit={handleRegister} style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '400px' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '25px', color: '#007bff' }}>Đăng ký Tài khoản</h2>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '13px' }}>Bạn là:</label>
-            <select name="role" value={regData.role} onChange={handleRegChange} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', boxSizing: 'border-box' }}>
-              <option value="USER">Khách mua hàng</option>
-              <option value="SELLER">Người bán hàng</option>
-            </select>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '13px' }}>Tên đăng nhập / Email</label>
-            <input type="text" name="username" required value={regData.username} onChange={handleRegChange} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', boxSizing: 'border-box' }} />
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '13px' }}>Mật khẩu</label>
-            <input type="password" name="password" required value={regData.password} onChange={handleRegChange} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', boxSizing: 'border-box' }} />
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '13px' }}>Số điện thoại</label>
-            <input type="tel" name="phone" required pattern="[0-9]{10,11}" title="Gồm 10-11 số" value={regData.phone} onChange={handleRegChange} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', boxSizing: 'border-box' }} />
-          </div>
-
-          <div style={{ marginBottom: '25px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '13px' }}>Ngày tháng năm sinh</label>
-            <input type="date" name="dob" required value={regData.dob} onChange={handleRegChange} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', boxSizing: 'border-box' }} />
-          </div>
-
-          <button type="submit" style={{ width: '100%', padding: '15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
-            Tạo tài khoản
-          </button>
-
-          <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px' }}>
-            <span style={{ color: '#555' }}>Đã có tài khoản? </span>
-            <span onClick={() => setIsLoginMode(true)} style={{ color: '#28a745', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}>
+            <button type="submit" className="btn btn-success w-100 py-2 fw-bold fs-6 mb-3">
               Đăng nhập
-            </span>
-          </div>
-        </form>
-      )}
+            </button>
+
+            <div className="text-center small">
+              <span className="text-muted">Bạn chưa có tài khoản? </span>
+              <span onClick={() => setIsLoginMode(false)} className="text-primary fw-bold text-decoration-underline" style={{ cursor: 'pointer' }}>
+                Đăng ký ngay
+              </span>
+            </div>
+          </form>
+
+        ) : (
+          /* ================= GIAO DIỆN ĐĂNG KÝ ================= */
+          <form onSubmit={handleRegister}>
+            <h2 className="text-center mb-4 text-primary fw-bold">Đăng ký</h2>
+
+            <div className="mb-3">
+              <label className="form-label fw-bold text-secondary small">Bạn là:</label>
+              <select name="role" value={regData.role} onChange={handleRegChange} className="form-select py-2">
+                <option value="USER">Khách mua hàng</option>
+                <option value="SELLER">Người bán hàng</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label fw-bold text-secondary small">Tên đăng nhập / Email</label>
+              <input type="text" name="username" required value={regData.username} onChange={handleRegChange} className="form-control py-2" />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label fw-bold text-secondary small">Mật khẩu</label>
+              <input type="password" name="password" required value={regData.password} onChange={handleRegChange} className="form-control py-2" />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label fw-bold text-secondary small">Số điện thoại</label>
+              <input type="tel" name="phone" required pattern="[0-9]{10,11}" title="Gồm 10-11 số" value={regData.phone} onChange={handleRegChange} className="form-control py-2" />
+            </div>
+
+            <div className="mb-4">
+              <label className="form-label fw-bold text-secondary small">Ngày tháng năm sinh</label>
+              <input type="date" name="dob" required value={regData.dob} onChange={handleRegChange} className="form-control py-2" />
+            </div>
+
+            <button type="submit" className="btn btn-primary w-100 py-2 fw-bold fs-6 mb-3">
+              Tạo tài khoản
+            </button>
+
+            <div className="text-center small">
+              <span className="text-muted">Đã có tài khoản? </span>
+              <span onClick={() => setIsLoginMode(true)} className="text-success fw-bold text-decoration-underline" style={{ cursor: 'pointer' }}>
+                Đăng nhập
+              </span>
+            </div>
+          </form>
+        )}
+
+      </div>
     </div>
   );
 };

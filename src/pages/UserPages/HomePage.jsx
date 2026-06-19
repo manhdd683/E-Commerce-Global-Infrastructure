@@ -1,80 +1,18 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { 
-  FaShoppingCart, FaMobileAlt, FaHome, FaTshirt, FaFire, FaThLarge, 
-  FaBook, FaSpa, FaBasketballBall, FaUtensils, FaBaby
-} from 'react-icons/fa';
+import { FaShoppingCart, FaMobileAlt, FaHome, FaTshirt, FaFire, FaThLarge, FaBook, FaSpa, FaBasketballBall, FaUtensils, FaBaby } from 'react-icons/fa';
 import apiClient from '../../api/apiClient';
 import { CartContext } from '../../context/CartContext'; 
 import Footer from '../../components/Common/User/Footer';
 
-// BỘ TỪ ĐIỂN DỊCH THUẬT CHO TRANG CHỦ
 const TRANSLATIONS = {
-  vi: {
-    bannerTitle: "🎉 SIÊU MUA SẮM - CHÀO HÈ 2026!",
-    bannerSub: "Hàng ngàn sản phẩm chính hãng đang giảm giá chạm đáy. Miễn phí vận chuyển toàn quốc.",
-    categoriesTitle: "DANH MỤC NỔI BẬT",
-    catAll: "Tất cả",
-    catTech: "Điện tử & Công nghệ",
-    catHome: "Nhà cửa & Đời sống",
-    catFashion: "Thời trang nam nữ",
-    catBook: "Sách",
-    catBeauty: "Làm đẹp",
-    catSport: "Thể thao",
-    catFood: "Thực phẩm",
-    catBaby: "Mẹ & Bé",
-    suggestionsTitle: "GỢI Ý HÔM NAY",
-    loading: "🔄 Đang tải sản phẩm...",
-    noProducts: "Không tìm thấy sản phẩm nào trong danh mục này.",
-    stockRemaining: "Còn",
-    addToCart: "Thêm vào giỏ",
-    addSuccessMsg: "🎉 Đã thêm sản phẩm vào giỏ hàng thành công!"
-  },
-  en: {
-    bannerTitle: "🎉 SUPER SHOPPING - SUMMER 2026!",
-    bannerSub: "Thousands of authentic products at rock-bottom prices. Free nationwide shipping.",
-    categoriesTitle: "FEATURED CATEGORIES",
-    catAll: "All",
-    catTech: "Electronics & Tech",
-    catHome: "Home & Living",
-    catFashion: "Fashion",
-    catBook: "Books",
-    catBeauty: "Beauty",
-    catSport: "Sports",
-    catFood: "Food",
-    catBaby: "Mom & Baby",
-    suggestionsTitle: "TODAY'S SUGGESTIONS",
-    loading: "🔄 Loading products...",
-    noProducts: "No products found in this category.",
-    stockRemaining: "Stock",
-    addToCart: "Add to cart",
-    addSuccessMsg: "🎉 Item added to cart successfully!"
-  },
-  ja: {
-    bannerTitle: "🎉 スーパーショッピング - 2026年夏！",
-    bannerSub: "何千もの本物の製品が底値で。全国送料無料。",
-    categoriesTitle: "注目のカテゴリー",
-    catAll: "すべて",
-    catTech: "家電・テクノロジー",
-    catHome: "ホーム＆リビング",
-    catFashion: "ファッション",
-    catBook: "本",
-    catBeauty: "美容",
-    catSport: "スポーツ",
-    catFood: "食品",
-    catBaby: "ママ＆ベビー",
-    suggestionsTitle: "今日の提案",
-    loading: "🔄 製品を読み込んでいます...",
-    noProducts: "このカテゴリに製品は見つかりませんでした。",
-    stockRemaining: "残り",
-    addToCart: "カートに追加",
-    addSuccessMsg: "🎉 商品がカートに正常に追加されました！"
-  }
+  vi: { bannerTitle: "🎉 SIÊU MUA SẮM - CHÀO HÈ 2026!", bannerSub: "Hàng ngàn sản phẩm chính hãng đang giảm giá chạm đáy. Miễn phí vận chuyển toàn quốc.", categoriesTitle: "DANH MỤC NỔI BẬT", catAll: "Tất cả", catTech: "Điện tử & Công nghệ", catHome: "Nhà cửa & Đời sống", catFashion: "Thời trang nam nữ", catBook: "Sách", catBeauty: "Làm đẹp", catSport: "Thể thao", catFood: "Thực phẩm", catBaby: "Mẹ & Bé", suggestionsTitle: "GỢI Ý HÔM NAY", loading: "🔄 Đang tải sản phẩm...", noProducts: "Không tìm thấy sản phẩm nào trong danh mục này.", stockRemaining: "Còn", addToCart: "Thêm vào giỏ", addSuccessMsg: "🎉 Đã thêm sản phẩm vào giỏ hàng thành công!" },
+  en: { bannerTitle: "🎉 SUPER SHOPPING - SUMMER 2026!", bannerSub: "Thousands of authentic products at rock-bottom prices. Free nationwide shipping.", categoriesTitle: "FEATURED CATEGORIES", catAll: "All", catTech: "Electronics & Tech", catHome: "Home & Living", catFashion: "Fashion", catBook: "Books", catBeauty: "Beauty", catSport: "Sports", catFood: "Food", catBaby: "Mom & Baby", suggestionsTitle: "TODAY'S SUGGESTIONS", loading: "🔄 Loading products...", noProducts: "No products found in this category.", stockRemaining: "Stock", addToCart: "Add to cart", addSuccessMsg: "🎉 Item added to cart successfully!" },
+  ja: { bannerTitle: "🎉 スーパーショッピング - 2026年夏！", bannerSub: "何千もの本物の製品が底値で。全国送料無料。", categoriesTitle: "注目のカテゴリー", catAll: "すべて", catTech: "家電・テクノロジー", catHome: "ホーム＆リビング", catFashion: "ファッション", catBook: "本", catBeauty: "美容", catSport: "スポーツ", catFood: "食品", catBaby: "ママ＆ベビー", suggestionsTitle: "今日の提案", loading: "🔄 製品を読み込んでいます...", noProducts: "このカテゴリに製品は見つかりませんでした。", stockRemaining: "残り", addToCart: "カートに追加", addSuccessMsg: "🎉 商品がカートに正常に追加されました！" }
 };
 
 const HomePage = () => {
   const navigate = useNavigate();
-  
   const [searchParams] = useSearchParams(); 
   const searchQuery = searchParams.get('search') || ''; 
 
@@ -104,11 +42,7 @@ const HomePage = () => {
         setIsLoading(true);
         const response = await apiClient.get('/products');
         const allProducts = response.data || [];
-        
-        // ĐÃ FIX: Chỉ lấy những sản phẩm HỢP LỆ (Không bị Admin Banned)
         const validProducts = allProducts.filter(p => p.moderationStatus !== "Banned");
-        
-        // Đảo ngược mảng để sản phẩm mới nhất lên đầu
         setProducts(validProducts.reverse());
       } catch (error) {
         console.error("Lỗi tải sản phẩm:", error);
@@ -118,9 +52,7 @@ const HomePage = () => {
     };
     fetchProducts();
 
-    const handleLangChange = () => {
-      setLanguage(localStorage.getItem('app_lang') || 'vi');
-    };
+    const handleLangChange = () => setLanguage(localStorage.getItem('app_lang') || 'vi');
     window.addEventListener('languageChanged', handleLangChange);
     return () => window.removeEventListener('languageChanged', handleLangChange);
   }, []);
@@ -128,155 +60,94 @@ const HomePage = () => {
   const filteredProducts = products.filter(product => {
     const categoryDef = categories.find(c => c.id === activeCategory);
     const productNameLower = product.name.toLowerCase();
-    
     const matchCategory = activeCategory === 'all' || categoryDef.keywords.some(keyword => productNameLower.includes(keyword));
     const matchSearch = productNameLower.includes(searchQuery.toLowerCase());
-
     return matchCategory && matchSearch;
   });
 
   return (
-    <div style={{ backgroundColor: '#f5f5f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="d-flex flex-column min-vh-100 bg-light">
       
-      <div style={{ backgroundColor: '#fff', paddingBottom: '20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', paddingTop: '20px' }}>
-          <div style={{ 
-            background: 'linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%)', 
-            borderRadius: '12px', 
-            padding: '40px 20px', 
-            textAlign: 'center', 
-            color: 'white',
-            boxShadow: '0 4px 15px rgba(255, 65, 108, 0.3)'
-          }}>
-            <h1 style={{ margin: '0 0 10px 0', fontSize: '32px' }}>{t.bannerTitle}</h1>
-            <p style={{ margin: 0, fontSize: '18px', opacity: 0.9 }}>{t.bannerSub}</p>
+      {/* BANNER CHIẾN DỊCH */}
+      <div className="bg-white pb-4">
+        <div className="container pt-4">
+          <div className="rounded-4 p-4 p-md-5 text-center text-white shadow" style={{ background: 'linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%)' }}>
+            <h1 className="fs-2 mb-2 fw-bold">{t.bannerTitle}</h1>
+            <p className="fs-6 mb-0 opacity-75">{t.bannerSub}</p>
           </div>
         </div>
       </div>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', flex: 1, paddingBottom: '50px' }}>
+      <div className="container flex-grow-1 pb-5">
         
-        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', marginTop: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ fontSize: '18px', color: '#333', marginTop: 0, marginBottom: '20px', textTransform: 'uppercase' }}>{t.categoriesTitle}</h2>
-          <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
+        {/* DANH MỤC NỔI BẬT */}
+        <div className="bg-white p-3 p-md-4 rounded-3 shadow-sm mt-4">
+          <h2 className="fs-5 text-dark mb-4 text-uppercase fw-bold text-center text-md-start">{t.categoriesTitle}</h2>
+          <div className="d-flex flex-wrap justify-content-center justify-content-md-start gap-3">
             {categories.map(cat => (
               <div 
                 key={cat.id} 
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  if (searchQuery) {
-                    navigate('/');
-                  }
-                }}
-                style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  cursor: 'pointer',
-                  width: '120px',
-                  opacity: activeCategory === cat.id ? 1 : 0.6,
-                  transform: activeCategory === cat.id ? 'scale(1.05)' : 'scale(1)',
-                  transition: 'all 0.2s'
-                }}
+                onClick={() => { setActiveCategory(cat.id); if (searchQuery) navigate('/'); }}
+                className="d-flex flex-column align-items-center cursor-pointer"
+                style={{ width: '90px', opacity: activeCategory === cat.id ? 1 : 0.6, transform: activeCategory === cat.id ? 'scale(1.05)' : 'scale(1)', transition: 'all 0.2s' }}
               >
-                <div style={{ 
-                  width: '60px', height: '60px', 
-                  backgroundColor: '#f8f9fa', 
-                  borderRadius: '16px', 
-                  display: 'flex', justifyContent: 'center', alignItems: 'center',
-                  border: activeCategory === cat.id ? '2px solid #ee4d2d' : '1px solid #eee'
-                }}>
+                <div className="rounded-4 d-flex justify-content-center align-items-center bg-light" style={{ width: '60px', height: '60px', border: activeCategory === cat.id ? '2px solid #ee4d2d' : '1px solid #eee' }}>
                   {cat.icon}
                 </div>
-                <span style={{ marginTop: '10px', fontSize: '13px', color: '#333', textAlign: 'center', fontWeight: activeCategory === cat.id ? 'bold' : 'normal' }}>
-                  {cat.name}
-                </span>
+                <span className={`mt-2 text-center small ${activeCategory === cat.id ? 'fw-bold text-danger' : 'text-dark'}`}>{cat.name}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div style={{ marginTop: '30px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', backgroundColor: 'white', padding: '15px 20px', borderRadius: '8px', borderBottom: '3px solid #ee4d2d' }}>
-            <h2 style={{ color: '#ee4d2d', margin: 0, fontSize: '20px', textTransform: 'uppercase' }}>
-              <FaFire style={{ marginRight: '8px', position: 'relative', top: '2px' }} />
-              {t.suggestionsTitle}
-            </h2>
+        {/* GỢI Ý SẢN PHẨM HÔM NAY */}
+        <div className="mt-5">
+          <div className="d-flex align-items-center gap-2 mb-4 bg-white p-3 rounded-3 border-bottom border-danger border-3 shadow-sm">
+            <FaFire className="text-danger fs-4" />
+            <h2 className="text-danger m-0 fs-5 fw-bold text-uppercase">{t.suggestionsTitle}</h2>
           </div>
 
           {isLoading ? (
-            <div style={{ textAlign: 'center', padding: '50px', color: '#888', fontSize: '18px' }}>
-              {t.loading}
-            </div>
+            <div className="text-center py-5 text-secondary fs-5">{t.loading}</div>
           ) : (
             <>
               {filteredProducts.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '50px', backgroundColor: 'white', borderRadius: '8px', color: '#888' }}>
-                  {t.noProducts}
-                </div>
+                <div className="text-center py-5 bg-white rounded-3 text-secondary">{t.noProducts}</div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '15px' }}>
+                <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3">
                   {filteredProducts.map(product => (
-                    <div 
-                      key={product.id} 
-                      onClick={() => navigate(`/product/${product.id}`)}
-                      style={{ 
-                        backgroundColor: 'white', 
-                        borderRadius: '8px', 
-                        overflow: 'hidden', 
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        position: 'relative'
-                      }}
-                    >
-                      <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(255, 212, 36, 0.9)', color: '#ee4d2d', fontSize: '12px', fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px' }}>
-                      </div>
-
-                      <div style={{ height: '220px', padding: '15px', display: 'flex', justifyContent: 'center', alignItems: 'center', borderBottom: '1px solid #fafafa' }}>
-                        <img 
-                          src={product.images?.[0] || product.image || "https://via.placeholder.com/200"} 
-                          alt={product.name} 
-                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
-                        />
-                      </div>
-                      
-                      <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                        <h3 style={{ 
-                          fontSize: '14px', color: '#333', margin: '0 0 10px 0', fontWeight: 'normal',
-                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '40px'
-                        }}>
-                          {product.name}
-                        </h3>
-                        
-                        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: '#ee4d2d', fontWeight: 'bold', fontSize: '16px' }}>
-                            {Number(product.price).toLocaleString('vi-VN')} ₫
-                          </span>
-                          <span style={{ fontSize: '12px', color: '#888' }}>
-                            {t.stockRemaining} {product.stock}
-                          </span>
+                    <div className="col" key={product.id}>
+                      <div 
+                        onClick={() => navigate(`/product/${product.id}`)}
+                        className="bg-white rounded h-100 shadow-sm border d-flex flex-column cursor-pointer"
+                        style={{ transition: 'transform 0.2s' }}
+                        onMouseOver={e => e.currentTarget.style.transform = 'translateY(-5px)'}
+                        onMouseOut={e => e.currentTarget.style.transform = 'none'}
+                      >
+                        {/* Ảnh sản phẩm */}
+                        <div className="position-relative d-flex justify-content-center align-items-center border-bottom p-2" style={{ height: '200px' }}>
+                          <img src={product.images?.[0] || product.image || "https://via.placeholder.com/200"} alt={product.name} className="img-fluid" style={{ maxHeight: '100%', objectFit: 'contain' }} />
                         </div>
-                      </div>
-
-                      <div style={{ padding: '0 15px 15px 15px' }}>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation(); 
-                            addToCart(product); 
-                            alert(t.addSuccessMsg);
-                          }}
-                          style={{ 
-                            width: '100%', padding: '10px', 
-                            backgroundColor: '#ee4d2d', color: 'white', 
-                            border: 'none', borderRadius: '4px', 
-                            cursor: 'pointer', fontWeight: 'bold',
-                            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
-                          }}
-                        >
-                          <FaShoppingCart /> {t.addToCart}
-                        </button>
+                        
+                        {/* Nội dung Card */}
+                        <div className="p-3 d-flex flex-column flex-grow-1">
+                          <h3 className="fs-6 text-dark mb-2 fw-normal" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '40px' }}>
+                            {product.name}
+                          </h3>
+                          <div className="mt-auto d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center mb-3 gap-1">
+                            <span className="text-danger fw-bold fs-6">{Number(product.price).toLocaleString('vi-VN')} ₫</span>
+                            <span className="small text-muted">{t.stockRemaining} {product.stock}</span>
+                          </div>
+                          
+                          {/* Nút thêm vào giỏ */}
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); addToCart(product); alert(t.addSuccessMsg); }}
+                            className="btn btn-danger w-100 fw-bold d-flex justify-content-center align-items-center gap-2 mt-auto"
+                            style={{ backgroundColor: '#ee4d2d', border: 'none' }}
+                          >
+                            <FaShoppingCart /> <span className="small">{t.addToCart}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

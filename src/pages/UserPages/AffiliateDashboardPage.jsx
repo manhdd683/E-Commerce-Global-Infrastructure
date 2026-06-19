@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { FaMoneyBillWave, FaMousePointer, FaShoppingCart, FaArrowLeft, FaHistory, FaWallet } from 'react-icons/fa';
@@ -7,7 +7,6 @@ const AffiliateDashboardPage = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   
-  // ĐÃ FIX: Thêm trường withdrawn (tiền đã rút) vào state mặc định
   const [stats, setStats] = useState({ clicks: 0, orders: 0, totalCommission: 0, withdrawn: 0, history: [] });
 
   const currentUserKey = user?.username || user?.name || 'guest';
@@ -18,34 +17,24 @@ const AffiliateDashboardPage = () => {
       navigate('/login');
       return;
     }
-    // Lấy dữ liệu Affiliate của user hiện tại từ LocalStorage
     const savedStats = localStorage.getItem(statsKey);
     if (savedStats) {
       setStats(JSON.parse(savedStats));
     }
   }, [user, navigate, statsKey]);
 
-  // TÍNH TOÁN SỐ DƯ THỰC TẾ
   const availableBalance = stats.totalCommission - (stats.withdrawn || 0);
 
-  // HÀM XỬ LÝ RÚT TIỀN
   const handleWithdraw = () => {
-    if (availableBalance <= 0) {
-      return alert("Số dư khả dụng của bạn không đủ để rút tiền!");
-    }
+    if (availableBalance <= 0) return alert("Số dư khả dụng của bạn không đủ để rút tiền!");
 
     const amountStr = window.prompt(`Số dư khả dụng: ${availableBalance.toLocaleString('vi-VN')} ₫\nNhập số tiền bạn muốn rút về ngân hàng:`);
     
     if (amountStr) {
       const amount = parseInt(amountStr);
-      if (isNaN(amount) || amount <= 0) {
-        return alert("Số tiền nhập không hợp lệ!");
-      }
-      if (amount > availableBalance) {
-        return alert("Bạn không thể rút vượt quá số dư đang có!");
-      }
+      if (isNaN(amount) || amount <= 0) return alert("Số tiền nhập không hợp lệ!");
+      if (amount > availableBalance) return alert("Bạn không thể rút vượt quá số dư đang có!");
 
-      // Cập nhật lại lịch sử và số tiền đã rút
       const newHistoryItem = {
         date: new Date().toISOString(),
         type: 'WITHDRAW',
@@ -56,7 +45,7 @@ const AffiliateDashboardPage = () => {
       const updatedStats = {
         ...stats,
         withdrawn: (stats.withdrawn || 0) + amount,
-        history: [...(stats.history || []), newHistoryItem] // Đẩy vào cuối mảng
+        history: [...(stats.history || []), newHistoryItem]
       };
 
       setStats(updatedStats);
@@ -66,117 +55,149 @@ const AffiliateDashboardPage = () => {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f4f6f8', minHeight: '80vh' }}>
-      <button onClick={() => navigate(-1)} style={{ marginBottom: '20px', background: 'none', border: 'none', cursor: 'pointer', color: '#ee4d2d', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold', fontSize: '15px' }}>
-        <FaArrowLeft /> Quay lại
-      </button>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <div>
-          <h2 style={{ margin: 0, color: '#333', fontSize: '28px' }}>Bảng điều khiển Affiliate</h2>
-          <p style={{ color: '#666', marginTop: '8px' }}>Xin chào, <strong style={{color: '#fd7e14'}}>{user?.username || user?.name}</strong>! Đây là hiệu suất tiếp thị của bạn.</p>
-        </div>
+    <div className="bg-light" style={{ minHeight: '80vh' }}>
+      <div className="container py-4 py-md-5">
         
-        {/* NÚT RÚT TIỀN TỰ ĐỘNG KHÓA NẾU KHÔNG CÓ TIỀN */}
-        <button 
-          onClick={handleWithdraw}
-          disabled={availableBalance <= 0}
-          style={{ 
-            padding: '12px 25px', 
-            backgroundColor: availableBalance > 0 ? '#fd7e14' : '#ccc', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '8px', 
-            fontWeight: 'bold', 
-            cursor: availableBalance > 0 ? 'pointer' : 'not-allowed', 
-            boxShadow: availableBalance > 0 ? '0 4px 10px rgba(253, 126, 20, 0.3)' : 'none',
-            transition: '0.3s'
-          }}
-        >
-          RÚT TIỀN HOA HỒNG
+        {/* HEADER & NÚT QUAY LẠI */}
+        <button onClick={() => navigate(-1)} className="btn btn-link text-danger fw-bold text-decoration-none p-0 mb-4 d-flex align-items-center gap-2">
+          <FaArrowLeft /> Quay lại
         </button>
-      </div>
 
-      {/* ĐÃ FIX: CHUYỂN THÀNH 4 THẺ CHỈ SỐ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
-        <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px', borderLeft: '5px solid #007bff' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#e6f2ff', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#007bff' }}><FaMousePointer size={24}/></div>
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
           <div>
-            <div style={{ color: '#666', fontSize: '14px', fontWeight: 'bold' }}>TỔNG LƯỢT CLICK</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#333', marginTop: '5px' }}>{stats.clicks}</div>
+            <h2 className="fs-3 fw-bold text-dark mb-2">Bảng điều khiển Affiliate</h2>
+            <p className="text-muted m-0">Xin chào, <strong className="text-warning">{user?.username || user?.name}</strong>! Đây là hiệu suất tiếp thị của bạn.</p>
+          </div>
+          
+          <button 
+            onClick={handleWithdraw}
+            disabled={availableBalance <= 0}
+            className={`btn px-4 py-2 fw-bold text-nowrap w-100 w-md-auto ${availableBalance > 0 ? 'btn-warning text-white shadow-sm' : 'btn-secondary'}`}
+            style={{ transition: '0.3s' }}
+          >
+            RÚT TIỀN HOA HỒNG
+          </button>
+        </div>
+
+        {/* CÁC THẺ CHỈ SỐ THỐNG KÊ (Responsive 1-2-4 cột) */}
+        <div className="row g-3 mb-5">
+          <div className="col-12 col-md-6 col-lg-3">
+            <div className="bg-white p-3 rounded-3 shadow-sm d-flex align-items-center gap-3 border-start border-primary border-4 h-100">
+              <div className="rounded-circle bg-primary bg-opacity-10 text-primary d-flex justify-content-center align-items-center flex-shrink-0" style={{ width: '50px', height: '50px' }}>
+                <FaMousePointer size={20}/>
+              </div>
+              <div>
+                <div className="text-muted small fw-bold mb-1">TỔNG LƯỢT CLICK</div>
+                <div className="fs-4 fw-bold text-dark lh-1">{stats.clicks}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-12 col-md-6 col-lg-3">
+            <div className="bg-white p-3 rounded-3 shadow-sm d-flex align-items-center gap-3 border-start border-success border-4 h-100">
+              <div className="rounded-circle bg-success bg-opacity-10 text-success d-flex justify-content-center align-items-center flex-shrink-0" style={{ width: '50px', height: '50px' }}>
+                <FaShoppingCart size={20}/>
+              </div>
+              <div>
+                <div className="text-muted small fw-bold mb-1">ĐƠN HÀNG THÀNH CÔNG</div>
+                <div className="fs-4 fw-bold text-dark lh-1">{stats.orders}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-12 col-md-6 col-lg-3">
+            <div className="bg-white p-3 rounded-3 shadow-sm d-flex align-items-center gap-3 border-start border-warning border-4 h-100">
+              <div className="rounded-circle bg-warning bg-opacity-10 text-warning d-flex justify-content-center align-items-center flex-shrink-0" style={{ width: '50px', height: '50px' }}>
+                <FaMoneyBillWave size={20}/>
+              </div>
+              <div>
+                <div className="text-muted small fw-bold mb-1">TỔNG HOA HỒNG</div>
+                <div className="fs-5 fw-bold text-warning lh-1">{stats.totalCommission.toLocaleString('vi-VN')} ₫</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-12 col-md-6 col-lg-3">
+            <div className="bg-white p-3 rounded-3 shadow-sm d-flex align-items-center gap-3 border-start border-danger border-4 h-100">
+              <div className="rounded-circle bg-danger bg-opacity-10 text-danger d-flex justify-content-center align-items-center flex-shrink-0" style={{ width: '50px', height: '50px' }}>
+                <FaWallet size={20}/>
+              </div>
+              <div>
+                <div className="text-muted small fw-bold mb-1">SỐ DƯ KHẢ DỤNG</div>
+                <div className="fs-5 fw-bold text-danger lh-1">{availableBalance.toLocaleString('vi-VN')} ₫</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px', borderLeft: '5px solid #28a745' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#e6f9ed', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#28a745' }}><FaShoppingCart size={24}/></div>
-          <div>
-            <div style={{ color: '#666', fontSize: '14px', fontWeight: 'bold' }}>ĐƠN HÀNG THÀNH CÔNG</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#333', marginTop: '5px' }}>{stats.orders}</div>
-          </div>
+        {/* LỊCH SỬ GIAO DỊCH (Responsive Table -> Cards) */}
+        <div className="bg-white p-3 p-md-4 rounded-3 shadow-sm">
+          <h3 className="fs-5 text-dark d-flex align-items-center gap-2 mb-4 fw-bold border-bottom pb-3">
+            <FaHistory className="text-warning" /> Lịch sử nhận/rút hoa hồng
+          </h3>
+          
+          {(!stats.history || stats.history.length === 0) ? (
+            <div className="text-center py-5 text-muted">Bạn chưa có giao dịch hoa hồng nào. Hãy chia sẻ link ngay nhé!</div>
+          ) : (
+            <>
+              {/* Table cho màn hình MD trở lên */}
+              <div className="table-responsive d-none d-md-block">
+                <table className="table table-hover align-middle mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th className="text-secondary fw-bold">Thời gian</th>
+                      <th className="text-center text-secondary fw-bold">Loại giao dịch</th>
+                      <th className="text-secondary fw-bold">Nội dung</th>
+                      <th className="text-end text-secondary fw-bold">Biến động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.history.slice().reverse().map((item, index) => (
+                      <tr key={index}>
+                        <td className="text-dark py-3">{new Date(item.date).toLocaleString('vi-VN')}</td>
+                        <td className="text-center py-3">
+                          {item.type === 'WITHDRAW' ? (
+                            <span className="badge bg-danger bg-opacity-10 text-danger px-2 py-1">RÚT TIỀN</span>
+                          ) : (
+                            <span className="badge bg-success bg-opacity-10 text-success px-2 py-1">NHẬN HOA HỒNG</span>
+                          )}
+                        </td>
+                        <td className="text-muted py-3">
+                          {item.type === 'WITHDRAW' ? item.note : `Từ đơn hàng ${item.orderTotal?.toLocaleString('vi-VN')} ₫`}
+                        </td>
+                        <td className={`text-end fw-bold py-3 ${item.type === 'WITHDRAW' ? 'text-danger' : 'text-success'}`}>
+                          {item.type === 'WITHDRAW' ? '-' : '+'}{(item.amount || item.commission || 0).toLocaleString('vi-VN')} ₫
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Cards cho màn hình Mobile */}
+              <div className="d-block d-md-none">
+                {stats.history.slice().reverse().map((item, index) => (
+                  <div key={index} className="border rounded p-3 mb-3 bg-light">
+                    <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                      <span className="small text-muted">{new Date(item.date).toLocaleString('vi-VN')}</span>
+                      {item.type === 'WITHDRAW' ? (
+                        <span className="badge bg-danger bg-opacity-10 text-danger px-2 py-1">RÚT TIỀN</span>
+                      ) : (
+                        <span className="badge bg-success bg-opacity-10 text-success px-2 py-1">NHẬN HOA HỒNG</span>
+                      )}
+                    </div>
+                    <div className="small text-dark mb-2">
+                      {item.type === 'WITHDRAW' ? item.note : `Từ đơn hàng ${item.orderTotal?.toLocaleString('vi-VN')} ₫`}
+                    </div>
+                    <div className={`text-end fw-bold fs-6 ${item.type === 'WITHDRAW' ? 'text-danger' : 'text-success'}`}>
+                      {item.type === 'WITHDRAW' ? '-' : '+'}{(item.amount || item.commission || 0).toLocaleString('vi-VN')} ₫
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
-
-        <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px', borderLeft: '5px solid #fd7e14' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#fff5e6', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fd7e14' }}><FaMoneyBillWave size={24}/></div>
-          <div>
-            <div style={{ color: '#666', fontSize: '14px', fontWeight: 'bold' }}>TỔNG HOA HỒNG</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#fd7e14', marginTop: '5px' }}>{stats.totalCommission.toLocaleString('vi-VN')} ₫</div>
-          </div>
-        </div>
-
-        {/* THẺ MỚI: SỐ DƯ KHẢ DỤNG */}
-        <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px', borderLeft: '5px solid #ee4d2d' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#ffe6e6', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#ee4d2d' }}><FaWallet size={24}/></div>
-          <div>
-            <div style={{ color: '#666', fontSize: '14px', fontWeight: 'bold' }}>SỐ DƯ KHẢ DỤNG</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#ee4d2d', marginTop: '5px' }}>{availableBalance.toLocaleString('vi-VN')} ₫</div>
-          </div>
-        </div>
-      </div>
-
-      {/* LỊCH SỬ GIAO DỊCH */}
-      <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-        <h3 style={{ margin: '0 0 20px 0', color: '#333', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FaHistory color="#fd7e14" /> Lịch sử nhận/rút hoa hồng
-        </h3>
-        
-        {(!stats.history || stats.history.length === 0) ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>Bạn chưa có giao dịch hoa hồng nào. Hãy chia sẻ link ngay nhé!</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #eee' }}>
-                <th style={{ padding: '15px', textAlign: 'left', color: '#555' }}>Thời gian</th>
-                <th style={{ padding: '15px', textAlign: 'center', color: '#555' }}>Loại giao dịch</th>
-                <th style={{ padding: '15px', textAlign: 'center', color: '#555' }}>Nội dung</th>
-                <th style={{ padding: '15px', textAlign: 'right', color: '#555' }}>Biến động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Đảo ngược mảng để cái mới nhất lên đầu */}
-              {stats.history.slice().reverse().map((item, index) => (
-                <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '15px', color: '#333' }}>{new Date(item.date).toLocaleString('vi-VN')}</td>
-                  
-                  <td style={{ padding: '15px', textAlign: 'center' }}>
-                    {item.type === 'WITHDRAW' ? (
-                      <span style={{ color: '#dc3545', backgroundColor: '#f8d7da', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>RÚT TIỀN</span>
-                    ) : (
-                      <span style={{ color: '#28a745', backgroundColor: '#d4edda', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>NHẬN HOA HỒNG</span>
-                    )}
-                  </td>
-
-                  <td style={{ padding: '15px', textAlign: 'center', color: '#666' }}>
-                    {item.type === 'WITHDRAW' ? item.note : `Từ đơn hàng ${item.orderTotal?.toLocaleString('vi-VN')} ₫`}
-                  </td>
-
-                  <td style={{ padding: '15px', textAlign: 'right', color: item.type === 'WITHDRAW' ? '#dc3545' : '#28a745', fontWeight: 'bold' }}>
-                    {item.type === 'WITHDRAW' ? '-' : '+'}{(item.amount || item.commission || 0).toLocaleString('vi-VN')} ₫
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </div>
     </div>
   );

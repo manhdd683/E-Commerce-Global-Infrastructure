@@ -9,6 +9,9 @@ const ChatWidget = () => {
   const [myChats, setMyChats] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const messagesEndRef = useRef(null);
+  
+  // Trạng thái kiểm tra thiết bị di động
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,7 +48,11 @@ const ChatWidget = () => {
     }
   };
 
+  // Cấu hình Event Listener và Responsive
   useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+
     loadChats();
     window.addEventListener('storage', loadChats);
     window.addEventListener('chatUpdated', loadChats);
@@ -81,6 +88,7 @@ const ChatWidget = () => {
     window.addEventListener('openChatWithSeller', handleOpenChatWithSeller);
 
     return () => {
+      window.removeEventListener('resize', handleResize);
       window.removeEventListener('storage', loadChats);
       window.removeEventListener('chatUpdated', loadChats);
       window.removeEventListener('openChatWithSeller', handleOpenChatWithSeller);
@@ -94,6 +102,7 @@ const ChatWidget = () => {
     scrollToBottom();
   }, [myChats, isOpen, activeChatId]);
 
+  // Xử lý gửi tin nhắn
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!chatInput.trim() || !activeChatId) return;
@@ -123,27 +132,36 @@ const ChatWidget = () => {
 
   const activeChat = myChats.find(c => c.id === activeChatId);
 
+  // Styling thay đổi theo thiết bị
+  const widgetContainerStyle = isMobile 
+    ? { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10000, backgroundColor: 'white', display: 'flex', flexDirection: 'column' }
+    : { position: 'fixed', bottom: '30px', right: '30px', width: '350px', height: '480px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 5px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #eee', zIndex: 9999 };
+
   return (
-    <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 9999 }}>
+    <>
+      {/* Nút bong bóng chat */}
       {!isOpen && (
-        <div onClick={() => setIsOpen(true)} style={{ width: '60px', height: '60px', backgroundColor: '#ee4d2d', color: 'white', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 4px 15px rgba(238, 77, 45, 0.4)', position: 'relative' }}>
-          <FaComments size={28} />
-          {totalUnread > 0 && (
-            <span style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: '#d70018', color: 'white', fontSize: '12px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '20px', border: '2px solid white' }}>
-              {totalUnread}
-            </span>
-          )}
+        <div style={{ position: 'fixed', bottom: isMobile ? '20px' : '30px', right: isMobile ? '20px' : '30px', zIndex: 9999 }}>
+          <div onClick={() => setIsOpen(true)} style={{ width: '60px', height: '60px', backgroundColor: '#ee4d2d', color: 'white', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 4px 15px rgba(238, 77, 45, 0.4)', position: 'relative' }}>
+            <FaComments size={28} />
+            {totalUnread > 0 && (
+              <span style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: '#d70018', color: 'white', fontSize: '12px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '20px', border: '2px solid white' }}>
+                {totalUnread}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
+      {/* Khung Chat */}
       {isOpen && (
-        <div style={{ width: '350px', height: '480px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 5px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #eee' }}>
+        <div style={widgetContainerStyle}>
           <div style={{ padding: '15px', backgroundColor: '#ee4d2d', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}>
               {activeChatId && <FaArrowLeft style={{ cursor: 'pointer', marginRight: '5px' }} onClick={() => setActiveChatId(null)} />}
               {activeChatId ? `Shop: ${activeChat?.sellerId}` : 'Danh sách Trò chuyện'}
             </div>
-            <FaTimes style={{ cursor: 'pointer' }} onClick={() => setIsOpen(false)} />
+            <FaTimes style={{ cursor: 'pointer', fontSize: '18px' }} onClick={() => setIsOpen(false)} />
           </div>
 
           {!activeChatId ? (
@@ -184,9 +202,9 @@ const ChatWidget = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              <form onSubmit={handleSendMessage} style={{ padding: '15px', borderTop: '1px solid #eee', display: 'flex', gap: '10px', backgroundColor: 'white' }}>
-                <textarea value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Nhập tin nhắn..." style={{ flex: 1, padding: '10px 15px', borderRadius: '12px', border: '1px solid #ddd', outline: 'none', fontSize: '14px', resize: 'none', height: '40px' }} />
-                <button type="submit" style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#ee4d2d', color: 'white', border: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}>
+              <form onSubmit={handleSendMessage} style={{ padding: '15px', borderTop: '1px solid #eee', display: 'flex', gap: '10px', backgroundColor: 'white', paddingBottom: isMobile ? '25px' : '15px' }}>
+                <textarea value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Nhập tin nhắn..." style={{ flex: 1, padding: '10px 15px', borderRadius: '12px', border: '1px solid #ddd', outline: 'none', fontSize: '14px', resize: 'none', height: '45px' }} />
+                <button type="submit" style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: '#ee4d2d', color: 'white', border: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
                   <FaPaperPlane size={16} />
                 </button>
               </form>
@@ -194,7 +212,7 @@ const ChatWidget = () => {
           )}
         </div>
       )}
-    </div>
+    </>
   );
 };
 

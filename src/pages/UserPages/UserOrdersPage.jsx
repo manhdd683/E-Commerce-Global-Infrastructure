@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { FaArrowLeft, FaStar, FaBoxOpen } from 'react-icons/fa';
 import apiClient from '../../api/apiClient';
 
-// ĐỒNG BỘ THÔNG TIN ĐỂ KIỂM TRA HẠN VOUCHER KHI HOÀN TRẢ
 const VOUCHER_EXPIRY_MAP = {
   'APP666': '2026-12-31T23:59:59.000Z',
   'SHOPVIP': '2026-12-31T23:59:59.000Z',
@@ -23,8 +22,6 @@ const VOUCHER_EXPIRY_MAP = {
 const UserOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // TÍCH HỢP STATE CHO THANH TABS
   const [activeTab, setActiveTab] = useState('all');
 
   const [reviewModal, setReviewModal] = useState({
@@ -34,7 +31,6 @@ const UserOrdersPage = () => {
   const loggedInUser = JSON.parse(localStorage.getItem('user'));
   const storageKey = loggedInUser?.name ? `claimedVouchers_${loggedInUser.name}` : 'claimedVouchers_guest';
 
-  // CẤU HÌNH CÁC TABS LỌC ĐƠN HÀNG
   const orderTabs = [
     { id: 'all', label: 'Tất cả', statusMatch: ['Processing', 'Completed', 'Canceled', 'Shipping', 'Pending Payment', 'Returned'] },
     { id: 'pending_payment', label: 'Chờ thanh toán', statusMatch: ['Pending Payment'] },
@@ -47,11 +43,10 @@ const UserOrdersPage = () => {
 
   const fetchMyOrders = async () => {
     try {
-      setIsLoading(true); // Bật Loading
+      setIsLoading(true);
       const response = await apiClient.get('/orders');
       const allOrders = response.data || [];
       
-      // LỌC CHUẨN XÁC: Chỉ lấy đơn do mình mua VÀ KHÔNG PHẢI là đơn mua gói Marketing
       const myOrders = allOrders.filter(order => {
         const isMyOrder = order.userId === loggedInUser?.id || order.username === loggedInUser?.name || order.username === loggedInUser?.username;
         const isNotMarketing = !(order.note && order.note.includes("MARKETING"));
@@ -63,7 +58,7 @@ const UserOrdersPage = () => {
     } catch (error) {
       console.error("Lỗi lấy lịch sử đơn hàng:", error);
     } finally {
-      setIsLoading(false); // CHỐT CHẶN: Luôn tắt Loading dù thành công hay thất bại
+      setIsLoading(false);
     }
   };
 
@@ -71,23 +66,20 @@ const UserOrdersPage = () => {
     if (loggedInUser?.name || loggedInUser?.username) {
       fetchMyOrders();
     } else {
-      setIsLoading(false); // Tắt loading nếu chưa đăng nhập
+      setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ĐÃ FIX: Lọc đơn hàng dựa trên Tab an toàn hơn
   const currentTabConfig = orderTabs.find(tab => tab.id === activeTab) || orderTabs[0];
   const filteredOrders = orders.filter(order => currentTabConfig.statusMatch.includes(order.status));
 
-  // QUY TẮC 2: QUY ĐỊNH HOÀN TRẢ VOUCHER KHI HỦY ĐƠN
+  // --- Logic Hoàn Voucher ---
   const handleCancelOrder = async (order) => {
     if (window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) {
       try {
-        // 1. Chuyển trạng thái đơn sang Đã hủy (Canceled)
         await apiClient.put(`/orders/${order.id}`, { status: 'Canceled' });
 
-        // 2. Trả lại hàng tồn kho vật lý
         const returnStockPromises = order.items.map(async (item) => {
           try {
             const prodResponse = await apiClient.get(`/products/${item.id}`);
@@ -99,20 +91,15 @@ const UserOrdersPage = () => {
         });
         await Promise.all(returnStockPromises);
 
-        // 3. XỬ LÝ QUY TẮC HOÀN VOUCHER VÀO KHO CÁ NHÂN
         const vCode = order.appliedVoucherCode;
         if (vCode && vCode !== 'Không sử dụng') {
           const expiryString = VOUCHER_EXPIRY_MAP[vCode];
-          
           if (expiryString) {
             const now = new Date();
             const expiryDate = new Date(expiryString);
-
-            // Kiểm tra voucher còn hạn sử dụng tại thời điểm hoàn hay không
             if (now <= expiryDate) {
               const savedClaimed = localStorage.getItem(storageKey);
               let currentList = savedClaimed ? JSON.parse(savedClaimed) : [];
-              
               if (!currentList.includes(vCode)) {
                 currentList.push(vCode);
                 localStorage.setItem(storageKey, JSON.stringify(currentList));
@@ -127,7 +114,6 @@ const UserOrdersPage = () => {
         } else {
           alert("Hủy đơn hàng thành công!");
         }
-
         fetchMyOrders(); 
       } catch (error) {
         alert("Hệ thống trục trặc khi hủy đơn!");
@@ -135,21 +121,16 @@ const UserOrdersPage = () => {
     }
   };
 
+  // --- Logic Đánh giá Sản phẩm ---
   const openReviewModal = (product, order, existingReview = null) => {
     if (existingReview) {
-      setReviewModal({
-        isOpen: true, product: product, order: order, rating: existingReview.rating, comment: existingReview.comment, media: existingReview.media, mediaType: existingReview.mediaType, isEditing: true
-      });
+      setReviewModal({ isOpen: true, product: product, order: order, rating: existingReview.rating, comment: existingReview.comment, media: existingReview.media, mediaType: existingReview.mediaType, isEditing: true });
     } else {
-      setReviewModal({
-        isOpen: true, product: product, order: order, rating: 5, comment: '', media: null, mediaType: '', isEditing: false
-      });
+      setReviewModal({ isOpen: true, product: product, order: order, rating: 5, comment: '', media: null, mediaType: '', isEditing: false });
     }
   };
 
-  const closeReviewModal = () => {
-    setReviewModal({ ...reviewModal, isOpen: false });
-  };
+  const closeReviewModal = () => setReviewModal({ ...reviewModal, isOpen: false });
 
   const handleMediaUpload = (e) => {
     const file = e.target.files[0];
@@ -170,19 +151,14 @@ const UserOrdersPage = () => {
       let newReview = {};
       let updatedReviews = currentProduct.reviews ? [...currentProduct.reviews] : [];
       const nowIso = new Date().toISOString();
-
       const reviewerNameStr = loggedInUser?.name || loggedInUser?.username || 'Khách hàng';
 
       if (reviewModal.isEditing) {
         const oldReview = reviewModal.product.reviewDetails;
-        newReview = {
-          ...oldReview, rating: reviewModal.rating, comment: reviewModal.comment, media: reviewModal.media, mediaType: reviewModal.mediaType, lastUpdated: nowIso, editCount: (oldReview.editCount || 0) + 1
-        };
+        newReview = { ...oldReview, rating: reviewModal.rating, comment: reviewModal.comment, media: reviewModal.media, mediaType: reviewModal.mediaType, lastUpdated: nowIso, editCount: (oldReview.editCount || 0) + 1 };
         updatedReviews = updatedReviews.map(rev => rev.id === oldReview.id ? newReview : rev);
       } else {
-        newReview = {
-          id: Date.now().toString(), reviewerName: reviewerNameStr, rating: reviewModal.rating, comment: reviewModal.comment, media: reviewModal.media, mediaType: reviewModal.mediaType, originalDate: nowIso, lastUpdated: nowIso, editCount: 0
-        };
+        newReview = { id: Date.now().toString(), reviewerName: reviewerNameStr, rating: reviewModal.rating, comment: reviewModal.comment, media: reviewModal.media, mediaType: reviewModal.mediaType, originalDate: nowIso, lastUpdated: nowIso, editCount: 0 };
         updatedReviews.push(newReview);
       }
 
@@ -211,128 +187,134 @@ const UserOrdersPage = () => {
   };
 
   return (
-    <div style={{ padding: '40px 50px', maxWidth: '1000px', margin: '0 auto', minHeight: '80vh', backgroundColor: '#f4f6f8' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px' }}>
-        <Link to="/" style={{ color: '#ff469e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
-          <FaArrowLeft /> Trang chủ
-        </Link>
-        <h1 style={{ color: '#333', margin: 0, borderLeft: '3px solid #ff469e', paddingLeft: '15px' }}>Đơn hàng của tôi</h1>
-      </div>
-
-      {/* THANH ĐIỀU HƯỚNG TABS SHOPEE TÍCH HỢP */}
-      <div style={{ 
-        display: 'flex', 
-        backgroundColor: 'white', 
-        overflowX: 'auto', 
-        borderBottom: '1px solid #ddd',
-        marginBottom: '20px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-        boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
-      }}>
-        {orderTabs.map(tab => (
-          <div 
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              flex: 1, minWidth: '120px', textAlign: 'center', padding: '16px 10px',
-              cursor: 'pointer', fontSize: '15px',
-              fontWeight: activeTab === tab.id ? 'bold' : 'normal',
-              color: activeTab === tab.id ? '#ff469e' : '#333',
-              borderBottom: activeTab === tab.id ? '2px solid #ff469e' : '2px solid transparent',
-              transition: 'all 0.2s ease', whiteSpace: 'nowrap'
-            }}
-          >
-            {tab.label}
-          </div>
-        ))}
-      </div>
-
-      {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '50px' }}>🔄 Đang tải...</div>
-      ) : filteredOrders.length === 0 ? (
-        <div style={{ backgroundColor: 'white', padding: '100px 20px', textAlign: 'center', borderRadius: '4px' }}>
-          <div style={{ width: '100px', height: '100px', backgroundColor: '#f8f9fa', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '0 auto 20px auto' }}>
-            <FaBoxOpen size={40} color="#ccc" />
-          </div>
-          <p style={{ color: '#888', fontSize: '16px' }}>Chưa có đơn hàng nào trong mục này.</p>
+    <div style={{ backgroundColor: '#f4f6f8', minHeight: '100vh', padding: '30px 0' }}>
+      <div className="container">
+        
+        {/* Header & Nút Quay Lại */}
+        <div className="d-flex align-items-center mb-4">
+          <Link to="/" style={{ color: '#ff469e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
+            <FaArrowLeft /> Trang chủ
+          </Link>
+          <h2 className="ms-3 ps-3 border-start border-3 border-danger mb-0 text-dark fw-bold">Đơn hàng của tôi</h2>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* LẶP QUA DANH SÁCH ĐÃ LỌC (filteredOrders) */}
-          {filteredOrders.map(order => (
-            <div key={order.id} style={{ backgroundColor: 'white', border: '1px solid #eee', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
-                <div>
-                  <div style={{ fontWeight: 'bold', color: '#333' }}>Mã đơn: <span style={{ color: '#ff469e' }}>#{order.id}</span></div>
-                  <div style={{ color: '#888', fontSize: '14px', marginTop: '5px' }}>Ngày đặt: {new Date(order.orderDate).toLocaleString('vi-VN')}</div>
-                  {order.appliedVoucherCode && order.appliedVoucherCode !== 'Không sử dụng' && (
-                    <div style={{ marginTop: '5px', fontSize: '13px', color: '#ff469e' }}>Voucher sử dụng: <strong>{order.appliedVoucherCode}</strong></div>
-                  )}
-                </div>
-                <div>
-                  {order.status === 'Completed' ? <span style={{ color: 'green', fontWeight: 'bold' }}>✓ Giao thành công</span> : 
-                   order.status === 'Canceled' ? <span style={{ color: 'red', fontWeight: 'bold' }}>✕ Đã hủy đơn</span> : 
-                   <span style={{ color: 'orange', fontWeight: 'bold' }}>⏳ Đang xử lý</span>}
-                </div>
-              </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                {order.items?.map((item, index) => (
-                  <div key={index} style={{ marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{item.name} <strong style={{ color: '#ff469e' }}>x{item.quantity}</strong></span>
-                      <div>
-                        {order.status === 'Completed' && !item.isReviewed && <button onClick={() => openReviewModal(item, order)} style={{ color: '#ff469e', background: 'none', border: '1px solid #ff469e', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', marginRight: '10px', fontWeight: 'bold' }}>Đánh giá</button>}
-                        {order.status === 'Completed' && item.isReviewed && checkCanEditReview(item.reviewDetails) && <button onClick={() => openReviewModal(item, order, item.reviewDetails)} style={{ color: '#007bff', background: 'none', border: '1px solid #b3d7ff', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', marginRight: '10px', fontWeight: 'bold' }}>Sửa đánh giá</button>}
-                        <span style={{ fontWeight: 'bold', fontSize: '15px' }}>{(item.price * item.quantity).toLocaleString('vi-VN')} ₫</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-                <div style={{ fontSize: '14px', color: '#666' }}>Hình thức: <strong>{order.customerInfo?.paymentMethod || "COD"}</strong></div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  {order.status === 'Processing' && (
-                    <button onClick={() => handleCancelOrder(order)} style={{ padding: '8px 15px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Hủy đơn hàng</button>
-                  )}
-                  <div style={{ fontSize: '18px', fontWeight: 'bold' }}>Tổng chi: <span style={{ color: '#d70018' }}>{Number(order.totalPrice || 0).toLocaleString('vi-VN')} ₫</span></div>
-                </div>
-              </div>
-
+        {/* Thanh Điều Hướng Tabs */}
+        <div className="d-flex overflow-auto bg-white border-bottom sticky-top shadow-sm mb-4" style={{ zIndex: 10, top: '60px' }}>
+          {orderTabs.map(tab => (
+            <div 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-3 text-center text-nowrap cursor-pointer flex-grow-1 border-bottom border-3 ${activeTab === tab.id ? 'fw-bold text-danger border-danger' : 'text-dark border-transparent'}`}
+              style={{ minWidth: 'max-content', transition: 'all 0.2s ease', cursor: 'pointer' }}
+            >
+              {tab.label}
             </div>
           ))}
         </div>
-      )}
 
-      {/* MODAL ĐÁNH GIÁ (Giữ nguyên gốc) */}
-      {reviewModal.isOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '500px' }}>
-            <h2>{reviewModal.isEditing ? "Chỉnh sửa đánh giá" : "Đánh giá sản phẩm"}</h2>
-            <form onSubmit={submitReview}>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px' }}>
-                {[1, 2, 3, 4, 5].map(star => (
-                  <FaStar key={star} size={30} color={star <= reviewModal.rating ? '#ffc107' : '#e4e5e9'} style={{ cursor: 'pointer' }} onClick={() => setReviewModal({ ...reviewModal, rating: star })} />
-                ))}
-              </div>
-              <textarea required value={reviewModal.comment} onChange={(e) => setReviewModal({ ...reviewModal, comment: e.target.value })} style={{ width: '100%', padding: '10px', minHeight: '80px', boxSizing: 'border-box' }} placeholder="Nhập bình luận ý kiến..." />
-              <div style={{ margin: '15px 0' }}>
-                <label style={{ cursor: 'pointer', color: '#007bff' }}> Up tệp đính kèm <input type="file" accept="image/*,video/*" onChange={handleMediaUpload} style={{ display: 'none' }} /></label>
-                {reviewModal.media && <div style={{ marginTop: '10px' }}>{reviewModal.mediaType === 'image' ? <img src={reviewModal.media} style={{ width: '80px' }} alt="preview" /> : <video src={reviewModal.media} style={{ width: '120px' }} controls />}</div>}
-              </div>
-              <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end' }}>
-                <button type="button" onClick={closeReviewModal} style={{ padding: '8px 15px', border: '1px solid #ccc', backgroundColor: 'white', cursor: 'pointer', borderRadius: '4px' }}>Hủy</button>
-                <button type="submit" style={{ backgroundColor: '#ff469e', color: 'white', border: 'none', padding: '8px 20px', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Xác nhận</button>
-              </div>
-            </form>
+        {/* Khu vực Hiển Thị Đơn Hàng */}
+        {isLoading ? (
+          <div className="text-center py-5">🔄 Đang tải...</div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="bg-white p-5 text-center rounded shadow-sm">
+            <div className="d-inline-flex justify-content-center align-items-center bg-light rounded-circle mb-3" style={{ width: '100px', height: '100px' }}>
+              <FaBoxOpen size={40} color="#ccc" />
+            </div>
+            <p className="text-muted fs-5">Chưa có đơn hàng nào trong mục này.</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="d-flex flex-column gap-3">
+            {filteredOrders.map(order => (
+              <div key={order.id} className="bg-white border rounded p-3 p-md-4 shadow-sm">
+                
+                {/* Header Đơn Hàng */}
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center border-bottom pb-3 mb-3">
+                  <div className="mb-2 mb-md-0">
+                    <div className="fw-bold text-dark">Mã đơn: <span className="text-danger">#{order.id}</span></div>
+                    <div className="text-muted small mt-1">Ngày đặt: {new Date(order.orderDate).toLocaleString('vi-VN')}</div>
+                    {order.appliedVoucherCode && order.appliedVoucherCode !== 'Không sử dụng' && (
+                      <div className="mt-1 small text-danger">Voucher sử dụng: <strong>{order.appliedVoucherCode}</strong></div>
+                    )}
+                  </div>
+                  <div>
+                    {order.status === 'Completed' ? <span className="text-success fw-bold">✓ Giao thành công</span> : 
+                     order.status === 'Canceled' ? <span className="text-danger fw-bold">✕ Đã hủy đơn</span> : 
+                     <span className="text-warning fw-bold">⏳ Đang xử lý</span>}
+                  </div>
+                </div>
+
+                {/* Danh Sách Sản Phẩm */}
+                <div className="mb-3">
+                  {order.items?.map((item, index) => (
+                    <div key={index} className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 border-bottom pb-2">
+                      <span className="mb-2 mb-md-0">{item.name} <strong className="text-danger">x{item.quantity}</strong></span>
+                      <div className="d-flex align-items-center flex-wrap gap-2">
+                        {order.status === 'Completed' && !item.isReviewed && (
+                          <button onClick={() => openReviewModal(item, order)} className="btn btn-outline-danger btn-sm fw-bold">Đánh giá</button>
+                        )}
+                        {order.status === 'Completed' && item.isReviewed && checkCanEditReview(item.reviewDetails) && (
+                          <button onClick={() => openReviewModal(item, order, item.reviewDetails)} className="btn btn-outline-primary btn-sm fw-bold">Sửa đánh giá</button>
+                        )}
+                        <span className="fw-bold fs-6 text-dark">{(item.price * item.quantity).toLocaleString('vi-VN')} ₫</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer Đơn Hàng (Tổng Tiền & Thao Tác) */}
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center border-top pt-3 mt-3">
+                  <div className="text-muted small mb-2 mb-md-0">Hình thức: <strong>{order.customerInfo?.paymentMethod || "COD"}</strong></div>
+                  <div className="d-flex align-items-center gap-3 w-100 w-md-auto justify-content-between justify-content-md-end">
+                    {order.status === 'Processing' && (
+                      <button onClick={() => handleCancelOrder(order)} className="btn btn-danger btn-sm fw-bold">Hủy đơn</button>
+                    )}
+                    <div className="fs-5 fw-bold">Tổng chi: <span className="text-danger">{Number(order.totalPrice || 0).toLocaleString('vi-VN')} ₫</span></div>
+                  </div>
+                </div>
+
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* MODAL ĐÁNH GIÁ KÈM RESPONSIVE */}
+        {reviewModal.isOpen && (
+          <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999 }}>
+            <div className="bg-white rounded p-3 p-md-4 shadow" style={{ width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+              <h4 className="mb-3 border-bottom pb-2 text-center text-md-start">{reviewModal.isEditing ? "Chỉnh sửa đánh giá" : "Đánh giá sản phẩm"}</h4>
+              
+              <form onSubmit={submitReview}>
+                <div className="d-flex justify-content-center gap-2 mb-3">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <FaStar key={star} size={35} color={star <= reviewModal.rating ? '#ffc107' : '#e4e5e9'} className="cursor-pointer" onClick={() => setReviewModal({ ...reviewModal, rating: star })} />
+                  ))}
+                </div>
+                
+                <textarea required value={reviewModal.comment} onChange={(e) => setReviewModal({ ...reviewModal, comment: e.target.value })} className="form-control mb-3" rows="3" placeholder="Nhập bình luận ý kiến..." />
+                
+                <div className="mb-3">
+                  <label className="text-primary cursor-pointer d-block text-center border p-2 rounded bg-light"> 
+                    + Thêm hình ảnh/video 
+                    <input type="file" accept="image/*,video/*" onChange={handleMediaUpload} className="d-none" />
+                  </label>
+                  {reviewModal.media && (
+                    <div className="mt-2 text-center">
+                      {reviewModal.mediaType === 'image' 
+                        ? <img src={reviewModal.media} className="img-thumbnail" style={{ height: '80px', objectFit: 'cover' }} alt="preview" /> 
+                        : <video src={reviewModal.media} className="img-thumbnail" style={{ height: '80px' }} controls />}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="d-flex justify-content-end gap-2 mt-4 border-top pt-3">
+                  <button type="button" onClick={closeReviewModal} className="btn btn-light border fw-bold w-50 w-md-auto">Hủy</button>
+                  <button type="submit" className="btn btn-danger fw-bold w-50 w-md-auto">Xác nhận</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
