@@ -1,70 +1,33 @@
-# Getting Started with Create React App
+# E-Commerce Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A comprehensive, fully responsive e-commerce web application built with React. This platform supports multiple user roles including Customers, Sellers, and Root Admins, providing a complete end-to-end shopping and management experience.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+### Customer (User)
+* **Multi-language Support:** Seamlessly switch between English, Vietnamese, and Japanese.
+* **Smart Product Search:** Quickly find products across the platform.
+* **Interactive Shopping Cart:** Real-time quantity updates, item selection, and dynamic total calculation.
+* **Real-time Notifications:** Get alerts for order updates, promotions, and wallet cashback.
+* **Checkout & Order Tracking:** Smooth checkout process and order history tracking.
 
-### `npm start`
+### Seller Dashboard
+* **Sales Analytics:** Visual charts to track revenue, pending orders, and low-stock alerts.
+* **Product Management:** Add, edit, delete, and monitor inventory levels.
+* **Order Processing:** Update order statuses (Pending, Shipping, Completed).
+* **Marketing Center:** Purchase Freeship Extra or Ads packages to boost shop visibility.
+* **Customer Chat:** Built-in messaging system to interact with buyers.
+* **Shop Vouchers:** Create and manage custom discount codes for the shop.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Admin Dashboard
+* **Global Overview:** Monitor platform GMV, commission revenue, and transaction volume.
+* **User Management:** Create, suspend, or delete user/seller accounts and assign roles.
+* **Content Moderation:** Ban or approve products based on platform policies.
+* **Transaction Approvals:** Verify and approve seller marketing service purchases.
+* **System Vouchers:** Create and distribute platform-wide discount codes.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Tech Stack
+* **Frontend:** React.js, React Router DOM, Context API (State Management)
+* **UI/UX:** Bootstrap 5, Custom CSS, React Icons
+* **Data Visualization:** Recharts
+* **Backend/Database (Mock):** MockAPI (for prototyping and demonstration)
