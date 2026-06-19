@@ -43,7 +43,40 @@ const CartPage = () => {
   };
 
   return (
-    <div className="bg-light" style={{ minHeight: '80vh' }}>
+    // Đã thay đổi thành min-vh-100 để nền xám phủ kín 100% màn hình, không còn bị lộ chân trắng
+    <div className="bg-light min-vh-100 pb-5">
+      
+      <style>{`
+        .cart-summary {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          z-index: 1020;
+          background-color: white;
+          padding: 15px 20px;
+          box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+          border-radius: 20px 20px 0 0;
+          border-top: 1px solid #eee;
+        }
+        
+        /* Giảm spacer lại một chút cho cân đối hơn */
+        .mobile-spacer { height: 140px; display: block; }
+
+        @media (min-width: 992px) {
+          .cart-summary {
+            position: sticky;
+            top: 100px;
+            bottom: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 24px;
+            border: 1px solid #eee;
+          }
+          .mobile-spacer { display: none; }
+        }
+      `}</style>
+
       <div className="container py-4 py-md-5">
         
         <h1 className="fs-4 text-dark mb-4 border-start border-danger border-4 ps-3 fw-bold">
@@ -51,41 +84,40 @@ const CartPage = () => {
         </h1>
 
         {cartItems.length === 0 ? (
-          <div className="bg-white rounded-3 shadow-sm p-5 text-center">
+          <div className="bg-white rounded-4 shadow-sm p-5 text-center border">
             <img src="https://cdn-icons-png.flaticon.com/512/11329/11329060.png" alt="Empty Cart" className="mb-4 opacity-50" style={{ width: '120px' }} />
             <h2 className="fs-5 text-secondary mb-2">{t.emptyCartTitle}</h2>
             <p className="text-muted mb-4">{t.emptyCartDesc}</p>
-            <Link to="/" className="btn btn-danger fw-bold px-4 py-2 d-inline-flex align-items-center gap-2">
+            <Link to="/" className="btn btn-danger fw-bold px-4 py-2 d-inline-flex align-items-center gap-2 rounded-pill">
               <FaArrowLeft /> {t.continueShopping}
             </Link>
           </div>
         ) : (
           <div className="row g-4 flex-column-reverse flex-lg-row">
             
-            {/* DANH SÁCH SẢN PHẨM (Dạng Card thay vì Table) */}
+            {/* CỘT TRÁI: DANH SÁCH SẢN PHẨM */}
             <div className="col-12 col-lg-8">
               
-              {/* Header Checkbox Tất cả (Chỉ hiện trên Tablet/PC) */}
-              <div className="bg-white rounded-3 shadow-sm p-3 mb-3 d-none d-md-flex align-items-center">
+              {/* Header Checkbox PC */}
+              <div className="bg-white rounded-3 shadow-sm p-3 mb-3 d-none d-md-flex align-items-center border">
                 <input 
                   type="checkbox" 
                   checked={cartItems.length > 0 && selectedIds.length === cartItems.length}
                   onChange={handleSelectAll}
                   className="form-check-input me-3 mt-0 cursor-pointer" style={{ width: '20px', height: '20px' }}
                 />
-                <span className="fw-bold flex-grow-1">{t.tableProduct}</span>
-                <span className="fw-bold text-center" style={{ width: '120px' }}>{t.tablePrice}</span>
-                <span className="fw-bold text-center" style={{ width: '120px' }}>{t.tableQuantity}</span>
-                <span className="fw-bold text-end" style={{ width: '120px' }}>{t.tableTotal}</span>
-                <span className="fw-bold text-center ms-3" style={{ width: '40px' }}>{t.tableDelete}</span>
+                <span className="fw-bold flex-grow-1 text-secondary">{t.tableProduct}</span>
+                <span className="fw-bold text-center text-secondary" style={{ width: '120px' }}>{t.tablePrice}</span>
+                <span className="fw-bold text-center text-secondary" style={{ width: '120px' }}>{t.tableQuantity}</span>
+                <span className="fw-bold text-end text-secondary" style={{ width: '120px' }}>{t.tableTotal}</span>
+                <span className="fw-bold text-center ms-3 text-secondary" style={{ width: '40px' }}>{t.tableDelete}</span>
               </div>
 
               {/* Các Item */}
               <div className="d-flex flex-column gap-3">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="bg-white rounded-3 shadow-sm p-3 d-flex flex-column flex-md-row align-items-md-center position-relative">
+                  <div key={item.id} className="bg-white rounded-3 shadow-sm p-3 d-flex flex-column flex-md-row align-items-md-center position-relative border">
                     
-                    {/* Nút xóa trên Mobile (Góc phải trên cùng) */}
                     <button 
                       onClick={() => removeFromCart(item.id)} 
                       className="btn btn-link text-danger p-0 position-absolute d-md-none" 
@@ -108,19 +140,16 @@ const CartPage = () => {
                     </div>
 
                     <div className="d-flex align-items-center justify-content-between justify-content-md-end gap-md-0">
-                      {/* Giá đơn */}
-                      <div className="text-secondary text-md-center d-md-block d-none" style={{ width: '120px' }}>
+                      <div className="text-secondary text-md-center d-md-block d-none fw-bold" style={{ width: '120px' }}>
                         {Number(item.price).toLocaleString('vi-VN')} ₫
                       </div>
 
-                      {/* Tăng giảm số lượng */}
                       <div className="d-flex align-items-center justify-content-center border rounded bg-light" style={{ width: '110px' }}>
                         <button onClick={() => updateQuantity(item.id, -1)} className="btn btn-sm text-secondary px-2 border-0"><FaMinus size={12}/></button>
                         <span className="fw-bold px-2">{item.quantity}</span>
                         <button onClick={() => updateQuantity(item.id, 1)} className="btn btn-sm text-secondary px-2 border-0"><FaPlus size={12}/></button>
                       </div>
 
-                      {/* Tổng tiền & Nút Xóa (PC) */}
                       <div className="fw-bold text-danger text-end ms-md-3 fs-6 fs-md-5" style={{ width: 'auto', minWidth: '100px' }}>
                         {Number(item.price * item.quantity).toLocaleString('vi-VN')} ₫
                       </div>
@@ -129,28 +158,29 @@ const CartPage = () => {
                         <FaTrash size={18} />
                       </button>
                     </div>
-
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* THANH TỔNG KẾT (Dính đáy trên Mobile) */}
+            {/* CỘT PHẢI: THANH TỔNG KẾT */}
             <div className="col-12 col-lg-4">
-              <div className="bg-white rounded-3 shadow-sm p-4 sticky-lg-top position-fixed bottom-0 start-0 w-100 position-lg-sticky" style={{ top: '20px', zIndex: 1020 }}>
+              <div className="cart-summary">
                 
-                {/* Chọn tất cả (Mobile) */}
-                <div className="d-flex align-items-center mb-3 d-lg-none border-bottom pb-2">
-                  <input type="checkbox" checked={cartItems.length > 0 && selectedIds.length === cartItems.length} onChange={handleSelectAll} className="form-check-input me-2 mt-0 cursor-pointer" style={{ width: '18px', height: '18px' }} />
-                  <span className="fw-bold text-dark small">Chọn tất cả</span>
+                <div className="d-flex justify-content-between align-items-center mb-3 d-lg-none border-bottom pb-2">
+                  <label className="d-flex align-items-center cursor-pointer mb-0">
+                    <input type="checkbox" checked={cartItems.length > 0 && selectedIds.length === cartItems.length} onChange={handleSelectAll} className="form-check-input me-2 mt-0" style={{ width: '18px', height: '18px' }} />
+                    <span className="fw-bold text-dark small">Chọn tất cả</span>
+                  </label>
+                  <span className="text-secondary small">{selectedIds.length} {t.items}</span>
                 </div>
 
-                <div className="d-flex justify-content-between align-items-center mb-2 text-secondary">
+                <div className="d-none d-lg-flex justify-content-between align-items-center mb-3 text-secondary border-bottom pb-2">
                   <span>{t.subtotal} ({selectedIds.length} {t.items}):</span>
-                  <span className="fw-bold">{totalAmount.toLocaleString('vi-VN')} ₫</span>
+                  <span className="fw-bold text-dark">{totalAmount.toLocaleString('vi-VN')} ₫</span>
                 </div>
                 
-                <div className="d-flex justify-content-between align-items-end mb-3 mb-lg-4">
+                <div className="d-flex justify-content-between align-items-end mb-3">
                   <span className="fw-bold text-dark fs-5">{t.totalSum}</span>
                   <span className="text-danger fw-bold fs-3 lh-1">{totalAmount.toLocaleString('vi-VN')} ₫</span>
                 </div>
@@ -158,14 +188,13 @@ const CartPage = () => {
                 <button 
                   onClick={handleCheckout}
                   disabled={selectedIds.length === 0}
-                  className={`btn w-100 py-3 fw-bold fs-6 d-flex align-items-center justify-content-center gap-2 ${selectedIds.length === 0 ? 'btn-secondary' : 'btn-success shadow-sm'}`}
+                  className={`btn w-100 py-2 py-md-3 fw-bold fs-6 d-flex align-items-center justify-content-center gap-2 ${selectedIds.length === 0 ? 'btn-secondary' : 'btn-danger shadow-sm'}`}
                 >
                   {t.proceedToCheckout} <FaArrowRight />
                 </button>
               </div>
               
-              {/* Spacer cho Mobile để không bị che mất nội dung cuối */}
-              <div className="d-block d-lg-none" style={{ height: '150px' }}></div>
+              <div className="mobile-spacer"></div>
             </div>
 
           </div>

@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   FaSearch, FaShoppingCart, FaBell, FaUser, FaSignOutAlt, 
-  FaClipboardList, FaBoxOpen, FaGift, FaGlobe, FaHandshake 
+  FaClipboardList, FaBoxOpen, FaGift, FaGlobe, FaHandshake, FaUserCircle 
 } from 'react-icons/fa';
 import { CartContext } from '../../../context/CartContext';
 import { AuthContext } from '../../../context/AuthContext';
@@ -68,15 +68,15 @@ const Header = () => {
 
         const now = new Date().getTime();
         let generatedNotifs = [
-          { id: 'promo_1', title: 'Khuyến mãi & Ưu đãi', message: `Mã giảm giá 50K sắp hết hạn. Săn sale ngay!`, timestamp: now - (2 * 3600000), iconType: 'promo', link: '/' },
-          { id: 'wallet_1', title: 'Cập nhật Ví', message: 'Bạn được hoàn +10.000 Xu từ giao dịch mua hàng.', timestamp: now - (5 * 3600000), iconType: 'wallet', link: '/profile' }
+          { id: 'promo_1', title: 'Khuyến mãi & Ưu đãi', message: `Mã giảm giá 50K sắp hết hạn. Săn sale ngay!`, timestamp: now - (2 * 3600000), iconType: 'promo', link: '/', read: false },
+          { id: 'wallet_1', title: 'Cập nhật Ví', message: 'Bạn được hoàn +10.000 Xu từ giao dịch mua hàng.', timestamp: now - (5 * 3600000), iconType: 'wallet', link: '/profile', read: false }
         ];
 
         myOrders.forEach(order => {
           let message = ''; let iconType = 'order_processing';
           if (order.status === 'Completed') { message = `Đơn #${order.id} giao thành công.`; iconType = 'order_completed'; }
           else if (order.status === 'Shipping') { message = `Đơn #${order.id} đang được giao.`; iconType = 'order_shipping'; }
-          if (message) generatedNotifs.push({ id: `order_${order.id}`, title: 'Cập nhật Đơn hàng', message, timestamp: new Date(order.orderDate).getTime(), iconType, link: '/my-orders' });
+          if (message) generatedNotifs.push({ id: `order_${order.id}`, title: 'Cập nhật Đơn hàng', message, timestamp: new Date(order.orderDate).getTime(), iconType, link: '/my-orders', read: false });
         });
 
         generatedNotifs.sort((a, b) => b.timestamp - a.timestamp);
@@ -88,6 +88,18 @@ const Header = () => {
 
   const handleSearch = (e) => { e.preventDefault(); navigate(`/?search=${encodeURIComponent(searchTerm)}`); };
   const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleMarkAllAsRead = (e) => {
+    e.stopPropagation();
+    setNotifications(notifications.map(notif => ({ ...notif, read: true })));
+  };
+
+  const handleReadSingle = (notif) => {
+    setNotifications(notifications.map(n => n.id === notif.id ? { ...n, read: true } : n));
+    setIsNotifOpen(false);
+    navigate(notif.link);
+  };
 
   const langConfig = { vi: { label: 'Tiếng Việt', flag: 'VN' }, en: { label: 'English', flag: 'EN' }, ja: { label: '日本語', flag: 'JP' } };
   const changeLanguage = (code) => {
@@ -98,109 +110,176 @@ const Header = () => {
   };
 
   return (
-    <header style={{ backgroundColor: 'white', borderBottom: '1px solid #eaeaea', position: 'sticky', top: 0, zIndex: 1000, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+    <header className="bg-white sticky-top" style={{ zIndex: 1000, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+      
+      {/* CSS CHO HIỆU ỨNG VÀ BẢNG DROPDOWN */}
+      <style>{`
+        .custom-dropdown { 
+          background-color: white; 
+          border-radius: 12px; 
+          box-shadow: 0 8px 30px rgba(0,0,0,0.12); 
+          border: 1px solid #f0f0f0; 
+          z-index: 1050; 
+          overflow: hidden;
+        }
+        .icon-btn { color: #555; transition: 0.2s; cursor: pointer; }
+        .icon-btn:hover { color: #ff469e; }
+        
+        /* Search bar focus effect */
+        .search-input:focus { 
+          border-color: #ff469e !important; 
+          background-color: #fff !important; 
+          box-shadow: 0 0 0 0.25rem rgba(255, 70, 158, 0.15) !important; 
+        }
+
+        /* Mobile Layout */
+        @media (max-width: 767px) {
+          .custom-dropdown { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); width: 92vw; }
+          .notif-scroll { max-height: 60vh; overflow-y: auto; }
+        }
+
+        /* PC Layout */
+        @media (min-width: 768px) {
+          .custom-dropdown { position: absolute; top: 100%; margin-top: 15px; }
+          .notif-dropdown { right: -20px; width: 360px; }
+          .lang-dropdown { right: 0; width: 140px; }
+          .user-dropdown { right: 0; width: 220px; }
+          .notif-scroll { max-height: 380px; overflow-y: auto; }
+        }
+      `}</style>
+
       <div className="container py-2 py-md-3">
-        {/* Đổi thành justify-content-between và dùng col-auto */}
-        <div className="row align-items-center justify-content-between">
+        <div className="row align-items-center">
           
-          {/* CỘT 1: LOGO (col-auto giúp ôm sát nội dung) */}
-          <div className="col-auto col-md-3 col-lg-3 mb-2 mb-md-0">
-            <Link to="/" style={{ textDecoration: 'none' }}>
-              <h1 className="text-nowrap" style={{ margin: 0, color: '#ff469e', fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: '900' }}>
+          {/* CỘT 1: LOGO */}
+          <div className="col-auto col-md-3 pe-0">
+            <Link to="/" className="text-decoration-none">
+              <h1 className="m-0 text-nowrap fw-black" style={{ color: '#ff469e', fontSize: 'clamp(22px, 5vw, 28px)', letterSpacing: '-0.5px' }}>
                 E-Commerce
               </h1>
             </Link>
           </div>
 
-          {/* CỘT 2: THANH TÌM KIẾM */}
-          <div className="col-12 col-md-5 col-lg-5 order-3 order-md-2 mt-2 mt-md-0">
-            <form onSubmit={handleSearch} style={{ display: 'flex', width: '100%', border: '2px solid #ff469e', borderRadius: '4px', overflow: 'hidden' }}>
-              <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ flex: 1, padding: '8px 12px', border: 'none', outline: 'none', fontSize: '14px' }} />
-              <button type="submit" style={{ width: '50px', backgroundColor: '#ff469e', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}><FaSearch size={16} /></button>
-            </form>
-          </div>
-
-          {/* CỘT 3: CÁC NÚT CHỨC NĂNG (gap-2 trên mobile cho đỡ chật, gap-md-4 trên PC) */}
-          <div className="col-auto col-md-4 col-lg-4 order-2 order-md-3 d-flex justify-content-end align-items-center gap-2 gap-md-4">
+          {/* CỘT 2: CÁC NÚT CHỨC NĂNG (Nằm chung hàng với Logo trên Mobile) */}
+          <div className="col col-md-4 order-md-3 d-flex justify-content-end align-items-center gap-3 gap-md-4 ps-0">
             
-            <div ref={langRef} style={{ position: 'relative' }}>
-              <div onClick={() => setIsLangOpen(!isLangOpen)} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#555', fontSize: '14px', fontWeight: 'bold' }}>
-                <FaGlobe size={20} /> <span className="d-none d-md-inline">{langConfig[language].flag}</span>
+            {/* Chọn ngôn ngữ */}
+            <div ref={langRef} className="position-relative">
+              <div onClick={() => setIsLangOpen(!isLangOpen)} className="d-flex align-items-center gap-1 icon-btn fw-bold" style={{ fontSize: '14px' }}>
+                <FaGlobe size={22} /> <span className="d-none d-md-inline">{langConfig[language].flag}</span>
               </div>
               {isLangOpen && (
-                <div style={{ position: 'absolute', top: '30px', right: '-10px', width: '130px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', border: '1px solid #eee', overflow: 'hidden' }}>
+                <div className="custom-dropdown lang-dropdown">
                   {Object.entries(langConfig).map(([code, { label, flag }]) => (
-                    <div key={code} onClick={() => changeLanguage(code)} style={{ padding: '10px 15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: language === code ? '#fff0f6' : 'white', color: language === code ? '#ff469e' : '#333', fontSize: '14px', borderBottom: '1px solid #f5f5f5' }}>
-                      <span style={{ fontWeight: 'bold' }}>{flag}</span> <span>{label}</span>
+                    <div key={code} onClick={() => changeLanguage(code)} className="d-flex align-items-center gap-2 p-3 cursor-pointer border-bottom" style={{ backgroundColor: language === code ? '#fff0f6' : 'white', color: language === code ? '#ff469e' : '#333', fontSize: '14px' }}>
+                      <span className="fw-bold">{flag}</span> <span>{label}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div ref={notifRef} style={{ position: 'relative' }}>
-              <div onClick={() => setIsNotifOpen(!isNotifOpen)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#555', position: 'relative' }}>
-                <FaBell size={20} />
-                {notifications.length > 0 && <span style={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: '#d70018', color: 'white', fontSize: '11px', fontWeight: 'bold', width: '18px', height: '18px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>{notifications.length}</span>}
+            {/* Thông báo */}
+            <div ref={notifRef} className="position-relative">
+              <div onClick={() => setIsNotifOpen(!isNotifOpen)} className="position-relative icon-btn">
+                <FaBell size={22} color={isNotifOpen ? '#ff469e' : ''} />
+                {unreadCount > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-2 border-white" style={{ fontSize: '10px', padding: '3px 6px' }}>{unreadCount}</span>}
               </div>
+              
               {isNotifOpen && (
-                <div style={{ position: 'absolute', top: '35px', right: '-10px', width: '300px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 5px 20px rgba(0,0,0,0.15)', border: '1px solid #eee', overflow: 'hidden', zIndex: 1001 }}>
-                  <div style={{ padding: '15px', borderBottom: '1px solid #eee', fontWeight: 'bold', color: '#333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{t.newNotif}</span><span style={{ fontSize: '12px', color: '#007bff', cursor: 'pointer', fontWeight: 'normal' }}>{t.markRead}</span>
+                <div className="custom-dropdown notif-dropdown">
+                  <div className="d-flex justify-content-between align-items-center p-3 bg-light border-bottom">
+                    <span className="fw-bold text-dark fs-6">{t.newNotif}</span>
+                    <span onClick={handleMarkAllAsRead} className="text-primary cursor-pointer" style={{ fontSize: '13px' }}>{t.markRead}</span>
                   </div>
-                  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                    {notifications.map(notif => (
-                      <div key={notif.id} onClick={() => { setIsNotifOpen(false); navigate(notif.link); }} style={{ display: 'flex', gap: '15px', padding: '15px', borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}>
-                        <div style={{ marginTop: '2px', display: 'flex', justifyContent: 'center', minWidth: '24px' }}>
-                          {notif.iconType === 'promo' ? <FaGift color="#ff469e" size={20}/> : <FaBoxOpen color="#28a745" size={20}/>}
+                  
+                  <div className="notif-scroll">
+                    {notifications.length === 0 ? (
+                      <div className="text-center p-5 text-muted small">Không có thông báo nào</div>
+                    ) : (
+                      notifications.map(notif => (
+                        <div key={notif.id} onClick={() => handleReadSingle(notif)} className={`d-flex gap-3 p-3 border-bottom cursor-pointer transition-all ${notif.read ? 'bg-white' : 'bg-danger bg-opacity-10'}`}>
+                          <div className="mt-1 flex-shrink-0">
+                            {notif.iconType === 'promo' ? <FaGift color="#ff469e" size={20}/> : <FaBoxOpen color="#28a745" size={20}/>}
+                          </div>
+                          <div className="flex-grow-1 overflow-hidden">
+                            <div className="fw-bold text-dark text-truncate mb-1" style={{ fontSize: '14px' }}>{notif.title}</div>
+                            <div className="text-secondary lh-sm mb-1" style={{ fontSize: '13px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{notif.message}</div>
+                            <div className="text-muted" style={{ fontSize: '11px' }}>{notif.time}</div>
+                          </div>
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#333', marginBottom: '4px' }}>{notif.title}</div>
-                          <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.4' }}>{notif.message}</div>
-                          <div style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>{notif.time}</div>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
-                  <div onClick={() => {setIsNotifOpen(false); navigate('/my-orders');}} style={{ padding: '12px', textAlign: 'center', backgroundColor: '#fdfdfd', color: '#ff469e', fontWeight: 'bold', cursor: 'pointer', borderTop: '1px solid #eee' }}>{t.viewAll}</div>
+                  <div onClick={() => { setIsNotifOpen(false); navigate('/my-orders'); }} className="p-3 text-center bg-light text-danger fw-bold cursor-pointer border-top" style={{ fontSize: '14px' }}>
+                    {t.viewAll}
+                  </div>
                 </div>
               )}
             </div>
 
-            <Link to="/cart" style={{ display: 'flex', alignItems: 'center', color: '#555', textDecoration: 'none', position: 'relative' }}>
-              <FaShoppingCart size={20} />
-              {cartItemCount > 0 && <span style={{ position: 'absolute', top: '-8px', right: '-12px', backgroundColor: '#d70018', color: 'white', fontSize: '12px', fontWeight: 'bold', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>{cartItemCount}</span>}
+            {/* Giỏ hàng */}
+            <Link to="/cart" className="position-relative d-flex align-items-center icon-btn">
+              <FaShoppingCart size={22} />
+              {cartItemCount > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-2 border-white" style={{ fontSize: '10px', padding: '3px 6px' }}>{cartItemCount}</span>}
             </Link>
 
+            {/* Tài khoản User */}
             {user ? (
-              <div ref={dropdownRef} style={{ position: 'relative' }}>
-                <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#f8f9fa', padding: '4px 10px', borderRadius: '20px', border: '1px solid #eee' }}>
-                  <img src={user.avatar || 'https://via.placeholder.com/30'} alt="User" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
-                  <span className="d-none d-md-inline" style={{ fontWeight: '600', color: '#333', fontSize: '14px' }}>{user.username || user.name}</span>
+              <div ref={dropdownRef} className="position-relative">
+                <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="d-flex align-items-center gap-2 cursor-pointer">
+                  {user.avatar && !user.avatar.includes('via.placeholder') ? (
+                    <img src={user.avatar} alt="User" className="rounded-circle object-fit-cover shadow-sm border border-light" style={{ width: '32px', height: '32px' }} />
+                  ) : (
+                    <FaUserCircle size={30} className="text-secondary icon-btn" />
+                  )}
+                  <span className="d-none d-md-inline fw-bold text-dark text-truncate" style={{ fontSize: '14px', maxWidth: '100px' }}>{user.username || user.name}</span>
                 </div>
                 
                 {isDropdownOpen && (
-                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '10px', width: '250px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', border: '1px solid #eee', overflow: 'hidden', zIndex: 1001 }}>
-                    <Link to="/profile" onClick={() => setIsDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '15px 20px', color: '#333', textDecoration: 'none', borderBottom: '1px solid #f5f5f5' }}>
-                      <FaUser color="#007bff" /> <span>{t.profile}</span>
+                  <div className="custom-dropdown user-dropdown">
+                    <Link to="/profile" onClick={() => setIsDropdownOpen(false)} className="d-flex align-items-center gap-3 p-3 text-dark text-decoration-none border-bottom hover-bg-light">
+                      <FaUser className="text-primary" /> <span className="fw-bold">{t.profile}</span>
                     </Link>
-                    <Link to="/my-orders" onClick={() => setIsDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '15px 20px', color: '#333', textDecoration: 'none', borderBottom: '1px solid #f5f5f5' }}>
-                      <FaClipboardList color="#ffc107" /> <span>{t.myOrders}</span>
+                    <Link to="/my-orders" onClick={() => setIsDropdownOpen(false)} className="d-flex align-items-center gap-3 p-3 text-dark text-decoration-none border-bottom hover-bg-light">
+                      <FaClipboardList className="text-warning" /> <span className="fw-bold">{t.myOrders}</span>
                     </Link>
-                    <div onClick={() => { setIsDropdownOpen(false); navigate('/affiliate'); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '15px 20px', color: '#333', cursor: 'pointer', borderBottom: '1px solid #f5f5f5', backgroundColor: '#fff8f0' }}>
-                      <FaHandshake color="#fd7e14" /> <span style={{ fontWeight: 'bold', color: '#fd7e14' }}>{t.affiliate}</span>
+                    <div onClick={() => { setIsDropdownOpen(false); navigate('/affiliate'); }} className="d-flex align-items-center gap-3 p-3 text-dark cursor-pointer border-bottom bg-warning bg-opacity-10">
+                      <FaHandshake className="text-danger" /> <span className="fw-bold text-danger">{t.affiliate}</span>
                     </div>
-                    <div onClick={() => { setIsDropdownOpen(false); logout(); navigate('/login'); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '15px 20px', color: '#d70018', cursor: 'pointer' }}>
-                      <FaSignOutAlt /> <span style={{ fontWeight: 'bold' }}>{t.logout}</span>
+                    <div onClick={() => { setIsDropdownOpen(false); logout(); navigate('/login'); }} className="d-flex align-items-center gap-3 p-3 text-danger cursor-pointer hover-bg-light">
+                      <FaSignOutAlt /> <span className="fw-bold">{t.logout}</span>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <Link to="/login" style={{ padding: '4px 10px', border: '1px solid #ddd', borderRadius: '4px', textDecoration: 'none', color: '#333', fontWeight: 'bold', fontSize: '13px', whiteSpace: 'nowrap' }}>{t.login}</Link>
+              <Link to="/login" className="btn btn-outline-danger btn-sm fw-bold px-3 text-nowrap rounded-pill">{t.login}</Link>
             )}
 
           </div>
+
+          {/* CỘT 3: THANH TÌM KIẾM BO TRÒN (Nằm dưới trên Mobile, giữa trên PC) */}
+          <div className="col-12 col-md-5 order-md-2 mt-3 mt-md-0">
+            <form onSubmit={handleSearch} className="position-relative">
+              <input 
+                type="text" 
+                placeholder={t.searchPlaceholder} 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+                className="form-control search-input pe-5" 
+                style={{ fontSize: '14px', borderRadius: '50rem', border: '1px solid #eaeaea', backgroundColor: '#f8f9fa', padding: '10px 20px', transition: 'all 0.2s' }} 
+              />
+              <button 
+                type="submit" 
+                className="btn position-absolute end-0 top-0 bottom-0 text-white d-flex align-items-center justify-content-center" 
+                style={{ backgroundColor: '#ff469e', borderRadius: '0 50rem 50rem 0', padding: '0 25px', border: 'none' }}
+              >
+                <FaSearch size={15} />
+              </button>
+            </form>
+          </div>
+
         </div>
       </div>
 
