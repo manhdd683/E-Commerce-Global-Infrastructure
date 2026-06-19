@@ -12,19 +12,23 @@ import SellerDashboard from "./pages/AdminPages/SellerDashboard";
 import AdminDashboard from "./pages/AdminPages/AdminDashboard";
 import UserOrdersPage from "./pages/UserPages/UserOrdersPage";
 import UserProfilePage from './pages/UserPages/UserProfilePage';
-
 import ShopPage from "./pages/UserPages/ShopPage";
 import SellerProfilePage from "./pages/AdminPages/SellerProfilePage";
 import SellerBulkUploadPage from './pages/AdminPages/SellerBulkUploadPage';
-// ĐÃ KHÔI PHỤC: Import trang Affiliate
 import AffiliateDashboardPage from "./pages/UserPages/AffiliateDashboardPage";
 
+// Route Guard
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useContext(AuthContext);
 
   if (!user) return <Navigate to="/login" replace />;
-  if (!allowedRoles.includes(user.role))
+
+  const userRole = user?.role?.toLowerCase();
+  const rolesAllowed = allowedRoles.map(role => role.toLowerCase());
+
+  if (!rolesAllowed.includes(userRole)) {
     return <Navigate to="/unauthorized" replace />;
+  }
 
   return children;
 };
@@ -33,6 +37,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
         <Route
           path="/"
           element={
@@ -42,10 +47,8 @@ function App() {
             </div>
           }
         />
-
         <Route path="/login" element={<AuthPage />} />
         <Route path="/register" element={<AuthPage />} />
-        
         <Route
           path="/unauthorized"
           element={
@@ -54,7 +57,26 @@ function App() {
             </div>
           }
         />
+        <Route
+          path="/product/:id"
+          element={
+            <div>
+              <Header />
+              <ProductDetailPage />
+            </div>
+          }
+        />
+        <Route
+          path="/shop/:sellerId"
+          element={
+            <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+              <Header />
+              <ShopPage />
+            </div>
+          }
+        />
 
+        {/* User Routes */}
         <Route
           path="/cart"
           element={
@@ -66,7 +88,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/checkout"
           element={
@@ -78,43 +99,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/seller/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={[ROLES.SELLER]}>
-              <SellerDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/seller/profile"
-          element={
-            <ProtectedRoute allowedRoles={[ROLES.SELLER]}>
-              <SellerProfilePage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route 
-          path="/seller/bulk-upload" 
-          element={
-            <ProtectedRoute allowedRoles={[ROLES.SELLER]}>
-              <SellerBulkUploadPage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        
         <Route
           path="/my-orders"
           element={
@@ -126,7 +110,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
         <Route 
           path="/profile" 
           element={
@@ -136,8 +119,6 @@ function App() {
             </ProtectedRoute>
           } 
         />
-
-        {/* ĐÃ KHÔI PHỤC: Route dẫn vào trang quản lý Tiếp thị liên kết (Affiliate) */}
         <Route 
           path="/affiliate" 
           element={
@@ -149,27 +130,44 @@ function App() {
             </ProtectedRoute>
           } 
         />
+
+        {/* Seller Routes */}
+        <Route
+          path="/seller/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.SELLER]}>
+              <SellerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/seller/profile"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.SELLER]}>
+              <SellerProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/seller/bulk-upload" 
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.SELLER]}>
+              <SellerBulkUploadPage />
+            </ProtectedRoute>
+          } 
+        />
         
+        {/* Admin Routes */}
         <Route
-          path="/product/:id"
+          path="/admin/dashboard"
           element={
-            <div>
-              <Header />
-              <ProductDetailPage />
-            </div>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <AdminDashboard />
+            </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/shop/:sellerId"
-          element={
-            <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-              <Header />
-              <ShopPage />
-            </div>
-          }
-        />
-
+        
+        {/* Fallback */}
         <Route
           path="*"
           element={
