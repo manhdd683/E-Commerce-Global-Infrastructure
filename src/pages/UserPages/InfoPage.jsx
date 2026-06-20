@@ -76,6 +76,7 @@ const PAGE_DATA = {
       <h4>Gia nhập đội ngũ E-Commerce</h4>
       <p>Chúng tôi luôn tìm kiếm những ứng viên đam mê công nghệ và thương mại điện tử. Các vị trí đang mở:</p>
       <ul>
+      <li>Tuyển dụng trình độ Cao đẳng, Đại học trở lên.</li>
         <li><strong>Frontend Developer (ReactJS):</strong> 2 vị trí. Yêu cầu 1 năm kinh nghiệm.</li>
         <li><strong>Chuyên viên CSKH:</strong> 5 vị trí. Không yêu cầu kinh nghiệm.</li>
         <li><strong>Quản lý Vận hành (Operations):</strong> 1 vị trí. Yêu cầu am hiểu chuỗi cung ứng.</li>

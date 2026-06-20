@@ -11,9 +11,9 @@ const NEW_USER_API_URL = "https://6a2e651ac9776ca6c0c48fe5.mockapi.io/users";
 
 const MOCK_FALLBACK_ORDERS = [
   { id: "DH01", orderDate: "2026-06-10T10:00:00", customerInfo: { fullName: "Nguyễn Văn A" }, totalPrice: 1500000, status: "Completed", isSuspicious: false },
-  { id: "DH02", orderDate: "2026-06-11T14:30:00", customerInfo: { fullName: "Trần Thị B" }, totalPrice: 25000000, status: "Processing", isSuspicious: true },
+  { id: "DH02", orderDate: "2026-06-11T14:30:00", customerInfo: { fullName: "Trần Thị B" }, totalPrice: 35030000, status: "Completed", isSuspicious: false },
   { id: "DH03", orderDate: "2026-06-12T09:15:00", customerInfo: { fullName: "Lê Văn C" }, totalPrice: 500000, status: "Completed", isSuspicious: false },
-  { id: "DH04", orderDate: "2026-06-13T16:45:00", customerInfo: { fullName: "Phạm Thị D" }, totalPrice: 3200000, status: "Processing", isSuspicious: false },
+  { id: "DH04", orderDate: "2026-06-13T16:45:00", customerInfo: { fullName: "Phạm Thị D" }, totalPrice: 12000000, status: "Processing", isSuspicious: true },
 ];
 
 const AdminDashboard = () => {
@@ -44,6 +44,7 @@ const AdminDashboard = () => {
 
   const [passwords, setPasswords] = useState({ currentPass: '', newPass: '', confirmPass: '' });
 
+  // TẢI DỮ LIỆU
   const loadVouchersAndPackages = () => {
     const savedVouchers = JSON.parse(localStorage.getItem('system_vouchers')) || [];
     setVouchers(savedVouchers);
@@ -76,6 +77,7 @@ const AdminDashboard = () => {
 
   useEffect(() => { fetchData(); }, []);
 
+  // XỬ LÝ TÀI KHOẢN
   const handleLogout = () => { localStorage.removeItem("user"); navigate("/login"); };
 
   const handleUpdatePassword = async (e) => {
@@ -127,6 +129,7 @@ const AdminDashboard = () => {
     }
   };
 
+  // XỬ LÝ SẢN PHẨM & DỊCH VỤ
   const handleModerateProduct = async (productId, status) => {
     const targetProduct = products.find((p) => p.id === productId);
     const reason = status === "Banned" ? prompt("Nhập lý do cấm bán (VD: Hàng giả, cấm bán...):") : "";
@@ -217,6 +220,7 @@ const AdminDashboard = () => {
     document.body.removeChild(link);
   };
 
+  // CÁC BIẾN TÍNH TOÁN HIỂN THỊ
   const pendingServiceRequests = orders.filter(o => o.status === 'Pending Approval');
   const productOrders = orders.filter(o => o.status === "Completed" && !(o.note && o.note.includes("MARKETING")));
   const totalGMV = productOrders.reduce((sum, order) => sum + (Number(order.totalPrice) || 0), 0);
@@ -706,7 +710,7 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* TAB 5: GIÁM SÁT ĐƠN HÀNG */}
+              {/* TAB 5: GIÁM SÁT ĐƠN HÀNG - CẬP NHẬT LOGIC FIX LỖI BIG TICKET */}
               {activeTab === "orders" && (
                 <div>
                   <h1 className="fs-3 fw-black text-dark mb-4">Giám sát Vận hành & Phân tích Giao dịch</h1>
@@ -728,22 +732,30 @@ const AdminDashboard = () => {
                           ) : (
                             currentOrders.map((order) => {
                               const isHighValue = order.totalPrice > 10000000;
+                              const isCompleted = order.status === "Completed";
+                              // Lỗi cũ nằm ở đây: Đã hoàn thành thì không đánh dấu là Warning (Cảnh báo đỏ) nữa
+                              const isWarning = (order.isSuspicious || isHighValue) && !isCompleted;
+                              
                               return (
-                                <tr key={order.id} className={order.isSuspicious || isHighValue ? "bg-warning bg-opacity-10" : ""}>
+                                <tr key={order.id} className={isWarning ? "bg-warning bg-opacity-10" : ""}>
                                   <td className="fw-black text-primary px-4">#{order.id}</td>
                                   <td className="fw-bold text-dark">{order.customerInfo?.fullName || order.username || "Khách ẩn danh"}</td>
                                   <td className="fw-bold text-danger text-nowrap fs-6">{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</td>
                                   <td>
-                                    {order.status === "Completed" ? (
+                                    {isCompleted ? (
                                       <span className="badge bg-success px-3 py-2 rounded-pill shadow-sm">Đã hoàn tất</span>
                                     ) : (
                                       <span className="badge bg-info text-dark px-3 py-2 rounded-pill shadow-sm">Đang luân chuyển</span>
                                     )}
                                   </td>
                                   <td className="text-center">
-                                    {order.isSuspicious || isHighValue ? (
+                                    {isWarning ? (
                                       <span className="badge bg-danger px-3 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2">
-                                        <FaExclamationTriangle /> {isHighValue ? "Big Ticket (Bất thường)" : "Flagged: Đơn ảo"}
+                                        <FaExclamationTriangle /> {isHighValue ? "Big Ticket (Cần duyệt)" : "Flagged: Đơn ảo"}
+                                      </span>
+                                    ) : isHighValue && isCompleted ? (
+                                      <span className="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold">
+                                        <FaCheckCircle className="me-1"/> Đơn Lớn (Đã xác thực)
                                       </span>
                                     ) : (
                                       <span className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold">Giao dịch An toàn</span>
