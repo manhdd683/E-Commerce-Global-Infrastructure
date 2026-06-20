@@ -16,7 +16,10 @@ import ShopPage from "./pages/UserPages/ShopPage";
 import SellerProfilePage from "./pages/AdminPages/SellerProfilePage";
 import SellerBulkUploadPage from './pages/AdminPages/SellerBulkUploadPage';
 import AffiliateDashboardPage from "./pages/UserPages/AffiliateDashboardPage";
+// BỔ SUNG IMPORT INFOPAGE
+import InfoPage from "./pages/UserPages/InfoPage"; 
 import 'bootstrap/dist/css/bootstrap.min.css';
+
 // Route Guard
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useContext(AuthContext);
@@ -37,7 +40,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
         <Route
           path="/"
           element={
@@ -76,7 +78,17 @@ function App() {
           }
         />
 
-        {/* User Routes */}
+        {/* BỔ SUNG ROUTE INFOPAGE (Dùng chung cho Giới thiệu, Chính sách, v.v.) */}
+        <Route
+          path="/info/:slug"
+          element={
+            <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+              <Header />
+              <InfoPage />
+            </div>
+          }
+        />
+
         <Route
           path="/cart"
           element={
@@ -131,7 +143,6 @@ function App() {
           } 
         />
 
-        {/* Seller Routes */}
         <Route
           path="/seller/dashboard"
           element={
@@ -157,7 +168,6 @@ function App() {
           } 
         />
         
-        {/* Admin Routes */}
         <Route
           path="/admin/dashboard"
           element={
@@ -167,7 +177,6 @@ function App() {
           }
         />
         
-        {/* Fallback */}
         <Route
           path="*"
           element={

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaFacebook, FaGithub, FaMapMarkerAlt, FaEnvelope, FaPhoneAlt } from 'react-icons/fa';
+import { Link } from 'react-router-dom'; // BỔ SUNG LINK TỪ REACT ROUTER
 
 // BỘ TỪ ĐIỂN DỊCH THUẬT FOOTER
 const TRANSLATIONS = {
@@ -67,16 +68,24 @@ const Footer = () => {
 
   return (
     <footer style={{ backgroundColor: 'white', borderTop: '1px solid #eaeaea', paddingTop: '40px', paddingBottom: '20px', marginTop: 'auto' }}>
+      
+      {/* THÊM STYLE ĐỂ BỎ GẠCH CHÂN CỦA LINK NHƯNG VẪN CÓ HIỆU ỨNG HOVER */}
+      <style>{`
+        .footer-link { color: #666; text-decoration: none; font-size: 13px; transition: 0.2s; }
+        .footer-link:hover { color: #ee4d2d; }
+      `}</style>
+
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', padding: '0 20px', flexWrap: 'wrap', gap: '30px' }}>
         
         {/* CỘT 1: CHĂM SÓC KHÁCH HÀNG */}
         <div style={{ flex: 1, minWidth: '200px' }}>
           <h4 style={{ color: '#333', fontSize: '14px', fontWeight: 'bold', marginBottom: '20px', textTransform: 'uppercase' }}>{t.col1Title}</h4>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <li style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>{t.helpCenter}</li>
-            <li style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>{t.buyingGuide}</li>
-            <li style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>{t.shippingPolicy}</li>
-            <li style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>{t.returnPolicy}</li>
+            {/* THAY THẾ LI THÀNH LINK CHUYỂN TRANG */}
+            <li><Link to="/info/trung-tam-tro-giup" className="footer-link">{t.helpCenter}</Link></li>
+            <li><Link to="/info/huong-dan-mua-hang" className="footer-link">{t.buyingGuide}</Link></li>
+            <li><Link to="/info/chinh-sach-van-chuyen" className="footer-link">{t.shippingPolicy}</Link></li>
+            <li><Link to="/info/chinh-sach-tra-hang" className="footer-link">{t.returnPolicy}</Link></li>
           </ul>
         </div>
 
@@ -84,14 +93,15 @@ const Footer = () => {
         <div style={{ flex: 1, minWidth: '200px' }}>
           <h4 style={{ color: '#333', fontSize: '14px', fontWeight: 'bold', marginBottom: '20px', textTransform: 'uppercase' }}>{t.col2Title}</h4>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <li style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>{t.aboutUs}</li>
-            <li style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>{t.careers}</li>
-            <li style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>{t.terms}</li>
-            <li style={{ color: '#666', fontSize: '13px', cursor: 'pointer' }}>{t.privacy}</li>
+            {/* THAY THẾ LI THÀNH LINK CHUYỂN TRANG */}
+            <li><Link to="/info/gioi-thieu" className="footer-link">{t.aboutUs}</Link></li>
+            <li><Link to="/info/tuyen-dung" className="footer-link">{t.careers}</Link></li>
+            <li><Link to="/info/dieu-khoan-su-dung" className="footer-link">{t.terms}</Link></li>
+            <li><Link to="/info/chinh-sach-bao-mat" className="footer-link">{t.privacy}</Link></li>
           </ul>
         </div>
 
-        {/* CỘT 3: THÔNG TIN PHÁT TRIỂN */}
+        {/* CỘT 3: THÔNG TIN PHÁT TRIỂN (Giữ nguyên không Link vì là thông tin tĩnh) */}
         <div style={{ flex: 1, minWidth: '250px' }}>
           <h4 style={{ color: '#333', fontSize: '14px', fontWeight: 'bold', marginBottom: '20px', textTransform: 'uppercase' }}>{t.col3Title}</h4>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
